@@ -290,7 +290,11 @@ Dashboard shell (DESIGN.md §7 — Dashboard Layout):
   - Brand logo
   - Nav links (Dashboard, Past Reports, Account Settings)
   - User info card at bottom
-  - "TERMINATE SESSION" logout button
+  - "Log Out" button that opens a confirmation dialog (shadcn `Dialog`):
+    - Title: "Log out"
+    - Description: "Are you sure you want to log out? You will need to sign in again to access the portal."
+    - "Cancel" button (outline variant) and "Log Out" button (destructive variant)
+    - Loading state while sign-out is in progress
 - Server component: fetch user session, pass role/profile to sidebar
 - `{children}` rendered in main content area
 
@@ -409,6 +413,205 @@ For dependency correctness, create files in this order:
 | 23 | `.env.local` | `supabase start` output |
 | 24 | `scripts/seed-users.ts` | `supabase/admin.ts`, `.env.local`, migrations applied |
 | 25 | `public/logo.png` | source file in `reference/` |
+
+---
+
+---
+
+# Phase 2 — Sub Office Dashboard
+
+> Reference screenshot: `reference/UI Reference/Screenshot 2026-03-09 at 1.39.23 PM.png`
+
+## Wireframe: Franchisee Dashboard (`/office/dashboard`)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ SIDEBAR (fixed w-64)              │  MAIN CONTENT (flex-1, bg-background, p-8) │
+│ bg-navy-900, text-white           │                                             │
+│                                   │                                             │
+│ ┌─────────────────────┐           │  HEADER ROW (flex, items-start, justify-between)
+│ │ [Brand Logo PNG]    │           │  ┌──────────────────────────────────────────┐│
+│ └─────────────────────┘           │  │ Left:                     Center-Right: ││
+│                                   │  │  "FRANCHISEE PORTAL"       "REPORTING   ││
+│ ● PLATFORM ONLINE                 │  │   (sectionHeader)           PERIOD"     ││
+│   (green dot + gray-400 text)     │  │  "DASHBOARD"               (sectionHdr) ││
+│                                   │  │   (pageTitle, text-2xl      "MARCH 2026"││
+│ ┌─────────────────────┐           │  │    font-bold)               (font-bold) ││
+│ │▎ ▦ Dashboard        │ ← active  │  │                                         ││
+│ │  (left border red,  │   state   │  │  Far right: [⏱ 5 DAYS REMAINING] badge ││
+│ │   bg-navy-800,      │           │  │   (outlined, brand color, clock icon)   ││
+│ │   text-white)       │           │  └──────────────────────────────────────────┘│
+│ │                     │           │                                             │
+│ │  📄 Past Reports    │           │  TWO-COLUMN LAYOUT (flex gap-8)             │
+│ │                     │           │  ┌─────────────────────┐ ┌────────────────┐ │
+│ │  ⚙ Account Settings │           │  │ LEFT COL (flex-1)   │ │ RIGHT COL      │ │
+│ └─────────────────────┘           │  │                     │ │ (w-80 shrink-0)│ │
+│                                   │  │                     │ │                │ │
+│         (flex-1 spacer)           │  │  [Revenue Card]     │ │ [Submission    │ │
+│                                   │  │  [Calc Totals]      │ │  Status Card]  │ │
+│ ┌─────────────────────┐           │  │  [CTA Button]       │ │                │ │
+│ │ bg-navy-800 rounded │           │  │                     │ │ [Deadline      │ │
+│ │ AUTHENTICATED AS    │           │  │                     │ │  Warning Card] │ │
+│ │  (sectionHeader,    │           │  └─────────────────────┘ └────────────────┘ │
+│ │   gray-400)         │           │                                             │
+│ │ KUDAT OFFICE #204   │           └─────────────────────────────────────────────┘
+│ │  (text-sm bold      │
+│ │   uppercase)        │
+│ │ SWITCH TO ADMIN     │
+│ │  (brand-red text,   │
+│ │   admin-only link)  │
+│ └─────────────────────┘
+│
+│ [🚪 Log Out]
+│  (ghost button, gray-400,
+│   opens confirmation dialog)
+└───────────────────────────┘
+```
+
+### Monthly Revenue Entry Card (white, shadow-sm, rounded-lg, p-6)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ 📅 MONTHLY REVENUE ENTRY                       DUE MARCH 05, 2026  │
+│ (calendar icon + sectionHeader)                 (sectionHeader)     │
+│                                                                     │
+│ ┌────────────────────────────────┐  ┌──────────────────────────────┐│
+│ │ TAX PREPARATION   Personal &  │  │ BOOKKEEPING     Monthly      ││
+│ │ FEES              Business    │  │ FEES            accounting   ││
+│ │ (bold uppercase)  Filings     │  │ (bold uppercase) services    ││
+│ │                   (muted,     │  │                 (muted,      ││
+│ │                    inline)    │  │                  inline)     ││
+│ │ ┌──┬─────────────────────┐    │  │ ┌──┬────────────────────┐   ││
+│ │ │$ │ 0.00                │    │  │ │$ │ 0.00               │   ││
+│ │ └──┴─────────────────────┘    │  │ └──┴────────────────────┘   ││
+│ └────────────────────────────────┘  └──────────────────────────────┘│
+│                                                                     │
+│ ┌────────────────────────────────┐  ┌──────────────────────────────┐│
+│ │ INSURANCE         Adjusted    │  │ OTHER SERVICE   Misc         ││
+│ │ COMMISSIONS       gross       │  │ FEES            platform     ││
+│ │ (bold uppercase)  commissions │  │ (bold uppercase) services    ││
+│ │                   (muted,     │  │                 (muted,      ││
+│ │                    inline)    │  │                  inline)     ││
+│ │ ┌──┬─────────────────────┐    │  │ ┌──┬────────────────────┐   ││
+│ │ │$ │ 0.00                │    │  │ │$ │ 0.00               │   ││
+│ │ └──┴─────────────────────┘    │  │ └──┴────────────────────┘   ││
+│ └────────────────────────────────┘  └──────────────────────────────┘│
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**Field label layout**: Label (bold uppercase) and description (muted text) are on the **same line** — label left, description inline to the right. NOT stacked vertically.
+
+**$ prefix**: Separate `<span>` outside the input, not inside it. Positioned to the left of the input with `gap-2`.
+
+### Calculated Totals Section (bg-navy-800, text-white, rounded-lg, p-6)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                                                                      │
+│ CALCULATED TOTAL GROSS              PLATFORM FEES APPLIED            │
+│ (sectionHeader, gray-400)           (sectionHeader, gray-400)        │
+│                                                                      │
+│ $0.00                               9.00% Total                      │
+│ (text-3xl font-bold white)          (text-lg font-semibold white)    │
+│                                                                      │
+│ ┌──────────────────────────────┐  ┌──────────────────────────────┐  │
+│ │ ROYALTY (7.00%)              │  │ ADVERTISING (2.00%)          │  │
+│ │ (sectionHeader, gray-400)    │  │ (sectionHeader, gray-400)    │  │
+│ │                              │  │                              │  │
+│ │ $0.00                        │  │ $0.00                        │  │
+│ │ (text-xl font-bold white)    │  │ (text-xl font-bold white)    │  │
+│ └──────────────────────────────┘  └──────────────────────────────┘  │
+│  (border border-white/10, p-4)     (border border-white/10, p-4)    │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**Layout**: Top section is `flex justify-between` — total gross on left, platform fees on right. Sub-boxes are `grid grid-cols-2 gap-3`.
+
+**Bug fix needed**: Percentages MUST use `PERCENTAGE_FORMATTER()` to avoid floating-point display like `9.000000000000002%`. The formatter outputs `"9.00%"`.
+
+### CTA Button (full width, below totals)
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│           CONFIRM & GENERATE STRIPE INVOICE  >                       │
+│  bg-brand-red, hover:bg-brand-red-hover, text-white                  │
+│  font-semibold uppercase tracking-wider                              │
+│  Chevron right icon (lucide ChevronRight)                            │
+│  Disabled until Phase 3 (Stripe integration)                         │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Submission Status Card (white, shadow-sm, rounded-lg, p-6) — Right Column
+
+```
+┌──────────────────────────────────┐
+│ SUBMISSION STATUS                │
+│ (sectionHeader)                  │
+│                                  │
+│ ● FEBRUARY 2026                  │
+│   (green dot)                    │
+│   Verified & Paid on 02/03/26   │
+│   (text-xs, muted-foreground)    │
+│                                  │
+│ ● MARCH 2026                     │
+│   (yellow/orange dot)            │
+│   Drafting - Needs Submission    │
+│   (text-xs, italic, orange/red   │
+│    text — distinguishes from     │
+│    paid status)                  │
+│                                  │
+│ (list continues for last 12 mo)  │
+└──────────────────────────────────┘
+```
+
+**Dot colors**: green = paid, yellow/orange = draft, blue = submitted, red = overdue, gray = none.
+
+**Per-row layout**: Dot + bold month name on first line, status description on second line below (indented under the month name).
+
+### Deadline Warning Card (bg-brand-red, text-white, rounded-lg, p-6) — Right Column
+
+```
+┌──────────────────────────────────┐
+│ (!) DEADLINE                     │
+│     APPROACHING                  │
+│  (AlertCircle icon, white)       │
+│  (text bold, large, uppercase)   │
+│                                  │
+│  Financial reports must be       │
+│  finalized by the 5th of each   │
+│  month to avoid platform         │
+│  suspension.                     │
+│  (text-sm, white, leading-relaxed│
+│                                  │
+│  ┌────────────────────────────┐  │
+│  │  VIEW POLICY HANDBOOK      │  │
+│  │  (border-white, text-white,│  │
+│  │   hover:bg-white           │  │
+│  │   hover:text-brand-red)    │  │
+│  └────────────────────────────┘  │
+│  Only shown when ≤5 days remain  │
+└──────────────────────────────────┘
+```
+
+### Sidebar — Nav Item Active State
+
+From the screenshot, the active nav item ("Dashboard") has:
+- **Left border**: 3px solid, brand-red or white
+- **Background**: `bg-navy-800` (lighter than sidebar bg)
+- **Text**: white (vs gray-300 for inactive items)
+- **Icon**: matching the nav label (grid = Dashboard, document = Past Reports, gear = Account Settings)
+
+### Sidebar — User Card "SWITCH TO ADMIN" Link
+
+- Red text link (`text-brand-red`) below the office name
+- Only visible if the user has admin capabilities
+- Links to `/admin/dashboard`
+
+### Known Bugs to Fix
+
+1. **Floating-point percentages**: The screenshot shows `9.000000000000002%` and `7.000000000000001%`. All percentage displays MUST use `PERCENTAGE_FORMATTER(value)` from constants, never raw arithmetic like `(royalty + advertising) * 100`.
+2. **Field label layout**: Labels and descriptions should be inline (same row), not stacked. The screenshot shows "TAX PREPARATION FEES" bold left with "Personal & Business Filings" muted text to its right.
 
 ---
 

@@ -1,0 +1,455 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  LayoutDashboard, 
+  FileText, 
+  Users, 
+  Settings, 
+  TrendingUp, 
+  LogOut, 
+  ChevronRight, 
+  CheckCircle2, 
+  AlertCircle, 
+  Clock,
+  Plus,
+  Search,
+  Filter,
+  DollarSign,
+  Download,
+  Calendar,
+  Eye,
+  Edit3,
+  UserCheck,
+  History
+} from 'lucide-react';
+
+/**
+ * BRANDING CONSTANTS
+ * Primary Navy: #00213B
+ * Primary Red: #E31B23
+ * Background: #F8FAFC
+ * Border Radius: 4px (Sharp/Professional)
+ */
+
+const LOGO_URL = "https://i.ibb.co/Lhb8pB3/Daniel-Ahart-logo-FULL-COLOR.png";
+
+const App = () => {
+  const [role, setRole] = useState('office'); // 'admin' or 'office'
+  const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // Sub-Office State
+  const [formData, setFormData] = useState({
+    tax: '',
+    bookkeeping: '',
+    insurance: '',
+    other: ''
+  });
+
+  const royaltyRate = 0.07;
+  const advertisingRate = 0.02;
+
+  const calculations = useMemo(() => {
+    const gross = (parseFloat(formData.tax) || 0) + 
+                  (parseFloat(formData.bookkeeping) || 0) + 
+                  (parseFloat(formData.insurance) || 0) + 
+                  (parseFloat(formData.other) || 0);
+    return {
+      gross,
+      royalty: gross * royaltyRate,
+      advertising: gross * advertisingRate,
+      totalDue: (gross * royaltyRate) + (gross * advertisingRate)
+    };
+  }, [formData]);
+
+  const navItems = role === 'office' ? [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'reports', label: 'Past Reports', icon: FileText },
+    { id: 'account', label: 'Account Settings', icon: Settings },
+  ] : [
+    { id: 'dashboard', label: 'Global Pulse', icon: TrendingUp },
+    { id: 'offices', label: 'Manage Offices', icon: Users },
+    { id: 'reports', label: 'System Reports', icon: FileText },
+    { id: 'fees', label: 'Fee Management', icon: DollarSign },
+  ];
+
+  return (
+    <div className="flex h-screen bg-[#F8FAFC] font-sans text-[#00213B]">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col z-20">
+        <div className="p-8 border-b border-slate-100 bg-white">
+          <img src={LOGO_URL} alt="Daniel Ahart" className="h-10 w-auto object-contain" />
+          <div className="mt-4 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">Platform Online</p>
+          </div>
+        </div>
+        
+        <nav className="flex-1 p-4 space-y-1">
+          {navItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-[4px] transition-all border-l-4 ${
+                activeTab === item.id 
+                ? 'bg-[#F1F5F9] border-[#00213B] text-[#00213B] font-bold' 
+                : 'border-transparent text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              <item.icon size={18} strokeWidth={activeTab === item.id ? 2.5 : 2} />
+              <span className="text-sm tracking-tight">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-slate-100">
+          <div className="bg-slate-50 rounded-[4px] p-3 mb-4 border border-slate-200">
+             <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Authenticated As</p>
+             <p className="font-bold text-xs truncate uppercase tracking-tighter">
+                {role === 'office' ? 'Kudat Office #204' : 'Platform Administrator'}
+             </p>
+             <button 
+                onClick={() => {
+                  setRole(role === 'admin' ? 'office' : 'admin');
+                  setActiveTab('dashboard');
+                }}
+                className="text-[10px] mt-2 text-[#E31B23] font-bold uppercase hover:underline block"
+             >
+                Switch to {role === 'admin' ? 'Sub-Office' : 'Admin'}
+             </button>
+          </div>
+          <button className="flex items-center space-x-2 text-slate-500 text-xs font-bold uppercase tracking-wider px-4 py-2 w-full hover:text-red-600">
+            <LogOut size={14} />
+            <span>Terminate Session</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        <header className="bg-white h-20 border-b border-slate-200 flex items-center justify-between px-10 sticky top-0 z-10 shadow-sm">
+          <div>
+            <h1 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-0.5">
+              {role === 'office' ? 'Franchisee Portal' : 'Global Headquarters'}
+            </h1>
+            <p className="text-xl font-black text-[#00213B] uppercase tracking-tight">
+              {activeTab.replace(/([A-Z])/g, ' $1')}
+            </p>
+          </div>
+          <div className="flex items-center gap-6">
+             <div className="text-right border-r pr-6 border-slate-200">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Reporting Period</p>
+                <p className="text-sm font-bold uppercase tracking-tight">March 2026</p>
+             </div>
+             <div className="flex flex-col items-end">
+                <span className="flex items-center gap-1.5 px-3 py-1 bg-red-50 text-[#E31B23] rounded-[4px] border border-red-100 text-xs font-bold uppercase tracking-tighter">
+                  <Clock size={12} strokeWidth={3} /> 5 Days Remaining
+                </span>
+             </div>
+          </div>
+        </header>
+
+        <div className="p-10">
+          {role === 'office' ? (
+            <SubOfficeView 
+              activeTab={activeTab} 
+              formData={formData} 
+              setFormData={setFormData} 
+              calculations={calculations} 
+              royaltyRate={royaltyRate}
+              advertisingRate={advertisingRate}
+            />
+          ) : (
+            <AdminView activeTab={activeTab} />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+// --- Sub-Office Views ---
+const SubOfficeView = ({ activeTab, formData, setFormData, calculations, royaltyRate, advertisingRate }) => {
+  if (activeTab === 'dashboard') {
+    return (
+      <div className="max-w-6xl space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Main Reporting Form */}
+          <div className="lg:col-span-8 bg-white border border-slate-200 rounded-[4px] shadow-sm">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h2 className="text-sm font-bold text-[#00213B] uppercase tracking-widest flex items-center gap-2">
+                <Calendar size={16} /> Monthly Revenue Entry
+              </h2>
+              <span className="text-[10px] font-bold text-slate-400">DUE MARCH 05, 2026</span>
+            </div>
+            
+            <div className="p-8 grid grid-cols-2 gap-x-10 gap-y-8">
+              {[
+                { id: 'tax', label: 'Tax Preparation Fees', desc: 'Personal & Business Filings' },
+                { id: 'bookkeeping', label: 'Bookkeeping Fees', desc: 'Monthly accounting services' },
+                { id: 'insurance', label: 'Insurance Commissions', desc: 'Adjusted gross commissions' },
+                { id: 'other', label: 'Other Service Fees', desc: 'Misc platform services' },
+              ].map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <div className="flex justify-between items-baseline">
+                    <label className="text-xs font-black text-[#00213B] uppercase tracking-tight">{field.label}</label>
+                    <span className="text-[10px] text-slate-400 italic">{field.desc}</span>
+                  </div>
+                  <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#00213B] font-bold opacity-30 group-focus-within:opacity-100">$</span>
+                    <input 
+                      type="number"
+                      placeholder="0.00"
+                      className="w-full pl-8 pr-4 py-3 bg-slate-50 rounded-[4px] border border-slate-200 focus:bg-white focus:border-[#00213B] outline-none transition-all font-bold"
+                      value={formData[field.id]}
+                      onChange={(e) => setFormData({...formData, [field.id]: e.target.value})}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-[#00213B] text-white p-8">
+               <div className="flex justify-between items-end mb-8 border-b border-white/10 pb-6">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Calculated Total Gross</h3>
+                    <p className="text-4xl font-black tracking-tighter">${calculations.gross.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Platform Fees Applied</p>
+                    <p className="text-lg font-bold">{(royaltyRate + advertisingRate) * 100}% Total</p>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-6 mb-8">
+                  <div className="p-4 border border-white/10 rounded-[4px] bg-white/5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Royalty ({royaltyRate*100}%)</p>
+                    <p className="text-xl font-bold">${calculations.royalty.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                  </div>
+                  <div className="p-4 border border-white/10 rounded-[4px] bg-white/5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Advertising ({advertisingRate*100}%)</p>
+                    <p className="text-xl font-bold">${calculations.advertising.toLocaleString(undefined, {minimumFractionDigits: 2})}</p>
+                  </div>
+               </div>
+
+               <div className="flex items-center gap-6">
+                 <button className="flex-1 py-4 bg-[#E31B23] hover:bg-red-700 text-white font-black uppercase tracking-widest rounded-[4px] transition-all flex items-center justify-center gap-3">
+                   Confirm & Generate Stripe Invoice <ChevronRight size={18} />
+                 </button>
+               </div>
+            </div>
+          </div>
+
+          {/* Sidebar Analytics */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white border border-slate-200 p-6 rounded-[4px] shadow-sm">
+               <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Submission Status</h3>
+               <div className="space-y-6 relative border-l border-slate-100 pl-4 ml-2">
+                  <div className="relative">
+                    <div className="absolute -left-[25px] top-1 h-4 w-4 rounded-full bg-emerald-500 border-4 border-white"></div>
+                    <p className="text-xs font-black uppercase">February 2026</p>
+                    <p className="text-[10px] text-slate-400 font-medium">Verified & Paid on 02/03/26</p>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -left-[25px] top-1 h-4 w-4 rounded-full bg-amber-400 border-4 border-white"></div>
+                    <p className="text-xs font-black uppercase text-[#00213B]">March 2026</p>
+                    <p className="text-[10px] text-amber-600 font-bold italic tracking-tighter">Drafting - Needs Submission</p>
+                  </div>
+               </div>
+            </div>
+
+            <div className="p-6 bg-[#E31B23] text-white rounded-[4px] shadow-lg shadow-red-100">
+               <AlertCircle className="mb-4 opacity-50" size={24} />
+               <h3 className="font-black text-lg uppercase tracking-tight mb-2 leading-tight">Deadline Approaching</h3>
+               <p className="text-xs font-bold opacity-80 mb-6 leading-relaxed">
+                 Financial reports must be finalized by the 5th of each month to avoid platform suspension.
+               </p>
+               <button className="w-full py-2 border-2 border-white/20 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest rounded-[4px] transition-all">
+                 View Policy Handbook
+               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTab === 'reports') {
+    return (
+      <div className="bg-white border border-slate-200 rounded-[4px] overflow-hidden">
+        <div className="p-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+           <h2 className="text-xs font-black uppercase tracking-widest">Historical Submissions</h2>
+           <button className="text-[10px] font-bold text-slate-400 border px-3 py-1 rounded-[4px] bg-white hover:text-navy uppercase">Export Full History</button>
+        </div>
+        <table className="w-full text-left">
+          <thead className="bg-slate-50 border-b border-slate-200">
+            <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <th className="px-8 py-4">Period</th>
+              <th className="px-8 py-4">Gross Reported</th>
+              <th className="px-8 py-4">Total Fees</th>
+              <th className="px-8 py-4">Status</th>
+              <th className="px-8 py-4 text-right">Documents</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 text-xs font-bold">
+            {[
+              { month: 'February 2026', gross: '$12,450', fees: '$1,120', status: 'Paid', color: 'text-emerald-600' },
+              { month: 'January 2026', gross: '$18,900', fees: '$1,701', status: 'Paid', color: 'text-emerald-600' },
+              { month: 'December 2025', gross: '$24,500', fees: '$2,205', status: 'Paid', color: 'text-emerald-600' },
+            ].map((row, i) => (
+              <tr key={i} className="hover:bg-slate-50 transition-colors">
+                <td className="px-8 py-4">{row.month}</td>
+                <td className="px-8 py-4 text-[#00213B]">{row.gross}</td>
+                <td className="px-8 py-4 text-[#00213B]">{row.fees}</td>
+                <td className="px-8 py-4 uppercase tracking-tighter"><span className={row.color}>{row.status}</span></td>
+                <td className="px-8 py-4 text-right">
+                  <button className="text-slate-400 hover:text-[#00213B] flex items-center justify-end gap-1 w-full uppercase text-[10px]">
+                    <Download size={12} /> Invoice PDF
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  return <div className="p-10 text-center text-slate-400 text-xs uppercase font-bold tracking-widest">System Section Restricted</div>;
+};
+
+// --- Admin Views ---
+const AdminView = ({ activeTab }) => {
+  if (activeTab === 'dashboard') {
+    return (
+      <div className="space-y-10">
+        {/* KPI Ribbon */}
+        <div className="grid grid-cols-4 gap-6">
+          {[
+            { label: 'Reporting Compliance', value: '92.4%', delta: '+2.1%', icon: CheckCircle2, color: 'text-emerald-600' },
+            { label: 'Network Gross (Mar)', value: '$2.84M', delta: '+12%', icon: TrendingUp, color: 'text-[#00213B]' },
+            { label: 'Awaiting Settlement', value: '$84,200', delta: '-$12k', icon: Clock, color: 'text-amber-600' },
+            { label: 'Active Locations', value: '154', delta: '+3 new', icon: Users, color: 'text-blue-600' },
+          ].map((kpi, idx) => (
+            <div key={idx} className="bg-white p-6 border border-slate-200 rounded-[4px] shadow-sm relative overflow-hidden group">
+               <div className="flex justify-between items-start mb-4">
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{kpi.label}</p>
+                 <kpi.icon size={16} className="text-slate-200 group-hover:text-[#00213B] transition-colors" />
+               </div>
+               <div className="flex items-baseline gap-2">
+                 <p className={`text-2xl font-black tracking-tight ${kpi.color}`}>{kpi.value}</p>
+                 <span className="text-[10px] font-bold text-slate-300">{kpi.delta}</span>
+               </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Global Office Matrix */}
+        <div className="bg-white border border-slate-200 rounded-[4px] shadow-sm overflow-hidden">
+          <div className="p-6 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <h2 className="text-xs font-black uppercase tracking-widest">Franchise Network Status</h2>
+              <div className="flex border rounded-[4px] bg-white text-[10px] font-bold uppercase">
+                <button className="px-3 py-1 bg-[#00213B] text-white">All</button>
+                <button className="px-3 py-1 text-slate-400 border-l hover:bg-slate-50">Pending</button>
+                <button className="px-3 py-1 text-slate-400 border-l hover:bg-slate-50">Overdue</button>
+              </div>
+            </div>
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                placeholder="SEARCH LOCATIONS..." 
+                className="pl-8 pr-4 py-1.5 border border-slate-200 rounded-[4px] text-[10px] font-bold uppercase outline-none focus:border-[#00213B] w-64" 
+              />
+            </div>
+          </div>
+          
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 bg-white">
+                <th className="px-8 py-4">Office Identifier</th>
+                <th className="px-8 py-4">Submission Status</th>
+                <th className="px-8 py-4">Mar Revenue</th>
+                <th className="px-8 py-4">Audit Status</th>
+                <th className="px-8 py-4 text-right">System Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-[11px] font-bold uppercase tracking-tight">
+              {[
+                { name: 'Kudat, Sabah #204', status: 'Verified', revenue: '$14,500', audit: 'Normal', statusCol: 'text-emerald-500' },
+                { name: 'Metro Atlanta #012', status: 'Pending', revenue: '-', audit: 'Pending', statusCol: 'text-amber-500' },
+                { name: 'Dallas North #044', status: 'Adjusted', revenue: '$22,800', audit: 'Flagged', statusCol: 'text-blue-500', isEdited: true },
+                { name: 'Orlando Central #098', status: 'Overdue', revenue: '-', audit: 'Urgent', statusCol: 'text-red-500' },
+              ].map((row, i) => (
+                <tr key={i} className="hover:bg-slate-50 group cursor-default">
+                  <td className="px-8 py-4 text-[#00213B] font-black">{row.name}</td>
+                  <td className="px-8 py-4">
+                    <span className={`px-2 py-0.5 rounded-[2px] text-[9px] border border-current font-black ${row.statusCol}`}>
+                      {row.status}
+                    </span>
+                  </td>
+                  <td className={`px-8 py-4 ${row.isEdited ? 'bg-amber-50 text-amber-700' : ''}`}>
+                    <div className="flex items-center gap-1.5">
+                      {row.revenue}
+                      {row.isEdited && <Edit3 size={10} title="Edited by Admin" />}
+                    </div>
+                  </td>
+                  <td className="px-8 py-4 text-slate-400 font-medium">{row.audit}</td>
+                  <td className="px-8 py-4 text-right flex justify-end gap-3 opacity-40 group-hover:opacity-100">
+                    <button className="flex items-center gap-1 hover:text-[#00213B] transition-colors"><UserCheck size={12}/> Impersonate</button>
+                    <button className="flex items-center gap-1 hover:text-[#00213B] transition-colors"><Eye size={12}/> View</button>
+                    <button className="flex items-center gap-1 text-[#E31B23] hover:underline transition-colors"><Edit3 size={12}/> Edit</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Audit Trail Preview (Bottom Highlight) */}
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-[4px] flex items-center justify-between">
+           <div className="flex items-center gap-3">
+              <History size={16} className="text-amber-700" />
+              <p className="text-[10px] font-bold text-amber-900 uppercase tracking-widest">
+                System Audit: Dallas North #044 revenue adjusted from $21,000 to $22,800 by Admin on 09/03/26
+              </p>
+           </div>
+           <button className="text-[9px] font-black uppercase text-amber-700 hover:underline">View Ledger</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTab === 'fees') {
+    return (
+      <div className="max-w-4xl space-y-8">
+        <div className="bg-white border border-slate-200 rounded-[4px] shadow-sm">
+           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-sm font-black uppercase tracking-widest">Global Fee Schedules</h2>
+              <button className="bg-[#00213B] text-white px-4 py-2 text-[10px] font-bold uppercase rounded-[4px]">Apply New Schedule</button>
+           </div>
+           <div className="p-8 grid grid-cols-2 gap-10">
+              <div className="space-y-4">
+                 <label className="text-xs font-black uppercase text-slate-400 block">Current Royalty Percentage</label>
+                 <div className="flex items-center gap-4">
+                    <input disabled value="7.0%" className="bg-slate-50 border p-3 rounded-[4px] font-black text-xl w-32 text-center" />
+                    <button className="text-[#E31B23] font-bold text-xs uppercase hover:underline">Update</button>
+                 </div>
+                 <p className="text-[10px] text-slate-400 italic">Effective for all reports submitted after 01/01/2026</p>
+              </div>
+              <div className="space-y-4">
+                 <label className="text-xs font-black uppercase text-slate-400 block">Current Advertising Percentage</label>
+                 <div className="flex items-center gap-4">
+                    <input disabled value="2.0%" className="bg-slate-50 border p-3 rounded-[4px] font-black text-xl w-32 text-center" />
+                    <button className="text-[#E31B23] font-bold text-xs uppercase hover:underline">Update</button>
+                 </div>
+                 <p className="text-[10px] text-slate-400 italic">Effective for all reports submitted after 01/01/2026</p>
+              </div>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <div className="p-10 text-center text-slate-400 text-xs uppercase font-bold tracking-widest">Section Restricted</div>;
+};
+
+export default App;
