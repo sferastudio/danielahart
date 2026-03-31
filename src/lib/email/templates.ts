@@ -64,7 +64,7 @@ export function reminderFinalEmail(office: OfficeInfo) {
     <p style="text-align: center; margin: 24px 0;">
       <a href="${process.env.NEXT_PUBLIC_APP_URL ?? ''}/office/dashboard" class="btn">Submit Report Now</a>
     </p>
-    <p style="color: #64748b; font-size: 14px;">If you need assistance, please contact the corporate office.</p>
+    <p style="color: #64748b; font-size: 14px;">If you need assistance, please contact the corporate team.</p>
   `);
   return { subject, html, to: office.email };
 }
@@ -89,7 +89,7 @@ export function adminNotificationEmail(
   const subject = `Report Submitted: ${office.name} — ${monthLabel}`;
   const html = baseTemplate(`
     <h2 style="color: #00213B; margin-top: 0;">New Report Submission</h2>
-    <p><strong>${office.name}</strong> (Office #${office.office_number}) has submitted their monthly revenue report for <strong>${monthLabel}</strong>.</p>
+    <p><strong>${office.name}</strong> (Franchisee #${office.office_number}) has submitted their monthly revenue report for <strong>${monthLabel}</strong>.</p>
     <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
       <tr>
         <td style="padding: 8px; border-bottom: 1px solid #e2e8f0; color: #64748b;">Total Gross Revenue</td>

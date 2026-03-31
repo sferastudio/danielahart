@@ -84,7 +84,7 @@ export function MonthlyRevenueForm({
       });
       setIsSubmitting(false);
       if (result.success) {
-        toast.success("Report submitted successfully. Stripe invoice will be generated.");
+        toast.success("Report submitted successfully.");
       } else {
         toast.error(result.error ?? "Failed to submit report");
       }
@@ -194,7 +194,7 @@ export function MonthlyRevenueForm({
             disabled={isPending || isSubmitting || isAlreadySubmitted}
             className="flex-1 py-4 bg-brand-red hover:bg-brand-red-hover text-white font-black uppercase tracking-widest rounded-[4px] transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Submitting\u2026" : "Confirm & Generate Stripe Invoice"}{" "}
+            {isSubmitting ? "Submitting\u2026" : "Submit Report"}{" "}
             <ChevronRight size={18} />
           </button>
         </div>

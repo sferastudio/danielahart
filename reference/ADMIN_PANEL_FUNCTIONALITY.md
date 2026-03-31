@@ -1,5 +1,7 @@
 # Admin Panel — Functionality Plan
 
+> **Note (2026-03-31):** Stripe integration is active in sandbox/test mode. Report workflow: draft → submitted → invoiced (Stripe invoice sent) → paid (via Stripe webhook). Admin can also mark reports as processed via checkbox.
+
 ## Overview
 
 The admin panel provides franchise management capabilities for Daniel Ahart Tax Service. This document describes all admin-facing features, their database backing, and how they map to the legacy system's functionality.

@@ -538,7 +538,8 @@ For dependency correctness, create files in this order:
 │  bg-brand-red, hover:bg-brand-red-hover, text-white                  │
 │  font-semibold uppercase tracking-wider                              │
 │  Chevron right icon (lucide ChevronRight)                            │
-│  Disabled until Phase 3 (Stripe integration)                         │
+│  ACTIVE — Wired to submitReport() which creates a Stripe invoice.    │
+│  Re-activated 2026-03-31 (sandbox/test mode).                        │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 

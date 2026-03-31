@@ -202,7 +202,7 @@ export function AdminMonthlySalesForm({
                 Revenue Entry — {office?.name}
               </h3>
               {existingReportId && (
-                <p className="text-xs text-slate-400 mb-4">
+                <p className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-[4px] px-3 py-1.5 mb-4 inline-block">
                   Editing existing report
                 </p>
               )}

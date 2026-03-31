@@ -14,6 +14,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -24,7 +31,7 @@ import {
 import { CURRENCY_FORMATTER, REVENUE_FIELDS } from "@/lib/constants";
 import { adminUpdateReport } from "@/actions/reports";
 import { toast, Toaster } from "sonner";
-import type { MonthlyReport } from "@/lib/types";
+import type { MonthlyReport, ReportStatus } from "@/lib/types";
 
 const STATUS_CLASSES: Record<string, string> = {
   paid: "bg-green-100 text-green-800",
@@ -33,6 +40,14 @@ const STATUS_CLASSES: Record<string, string> = {
   overdue: "bg-red-100 text-red-800",
   draft: "bg-slate-100 text-slate-600",
 };
+
+const ADMIN_STATUS_OPTIONS: { value: ReportStatus; label: string }[] = [
+  { value: "draft", label: "Draft" },
+  { value: "submitted", label: "Submitted" },
+  { value: "invoiced", label: "Invoiced" },
+  { value: "paid", label: "Paid" },
+  { value: "overdue", label: "Overdue" },
+];
 
 interface AuditEntry {
   id: string;
@@ -60,6 +75,7 @@ export function ReportEditor({
       vals[f.name] = String(report[f.name as keyof MonthlyReport] ?? 0);
     }
     vals.notes = report.notes ?? "";
+    vals.status = report.status;
     setForm(vals);
   }
 
@@ -71,6 +87,12 @@ export function ReportEditor({
         updates[f.name] = parseFloat(form[f.name]) || 0;
       }
       if (form.notes) updates.notes = form.notes;
+      if (form.status && form.status !== editingReport.status) {
+        updates.status = form.status;
+        if (form.status === "paid") {
+          updates.paid_at = new Date().toISOString();
+        }
+      }
 
       const result = await adminUpdateReport(editingReport.id, updates);
       if (result.success) {
@@ -197,6 +219,26 @@ export function ReportEditor({
                   />
                 </div>
               ))}
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Status</Label>
+              <Select
+                value={form.status ?? ""}
+                onValueChange={(value) =>
+                  setForm((f) => ({ ...f, status: value ?? "" }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ADMIN_STATUS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Notes</Label>

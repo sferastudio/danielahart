@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getOrCreateCustomer, createAndSendInvoice } from "@/lib/stripe/invoices";
 
 interface ReportInput {
   report_month: string;
@@ -122,6 +123,52 @@ export async function submitReport(input: ReportInput) {
     .single();
 
   if (error) return { success: false, error: error.message };
+
+  // Generate Stripe invoice
+  try {
+    const admin = createAdminClient();
+    const { data: office } = await admin
+      .from("offices")
+      .select("*")
+      .eq("id", office_id)
+      .single();
+
+    if (office && report) {
+      const customerId = await getOrCreateCustomer(office);
+
+      // Save stripe_customer_id if newly created
+      if (!office.stripe_customer_id) {
+        await admin
+          .from("offices")
+          .update({ stripe_customer_id: customerId })
+          .eq("id", office_id);
+      }
+
+      const { invoiceId, invoiceUrl } = await createAndSendInvoice(
+        report,
+        office,
+        customerId
+      );
+
+      // Update report with Stripe invoice details
+      await admin
+        .from("monthly_reports")
+        .update({
+          stripe_invoice_id: invoiceId,
+          stripe_invoice_url: invoiceUrl,
+          status: "invoiced",
+        })
+        .eq("id", report.id);
+    }
+  } catch (stripeError) {
+    // Report is saved but Stripe failed — log but don't fail the whole action
+    console.error("Stripe invoice creation failed:", stripeError);
+    return {
+      success: true,
+      report,
+      warning: "Report submitted but invoice creation failed. Admin will be notified.",
+    };
+  }
 
   return { success: true, report };
 }
@@ -247,4 +294,42 @@ export async function adminUpdateReport(
   });
 
   return { success: true, report };
+}
+
+export async function sendReminder(officeId: string) {
+  const ctx = await requireAdmin();
+  if ("error" in ctx) return { success: false, error: ctx.error };
+  const { admin, user } = ctx;
+
+  // Email integration is future work — just log for now
+  await admin.from("audit_log").insert({
+    user_id: user.id,
+    action: "send_reminder",
+    entity_type: "office",
+    entity_id: officeId,
+  });
+
+  return { success: true };
+}
+
+export async function markReviewed(reportId: string) {
+  const ctx = await requireAdmin();
+  if ("error" in ctx) return { success: false, error: ctx.error };
+  const { admin, user } = ctx;
+
+  const { error } = await admin
+    .from("monthly_reports")
+    .update({ is_processed: true })
+    .eq("id", reportId);
+
+  if (error) return { success: false, error: error.message };
+
+  await admin.from("audit_log").insert({
+    user_id: user.id,
+    action: "mark_reviewed",
+    entity_type: "monthly_report",
+    entity_id: reportId,
+  });
+
+  return { success: true, is_processed: true };
 }

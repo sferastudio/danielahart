@@ -11,7 +11,7 @@ Daniel Ahart Tax needs a web portal where franchise sub-offices submit monthly r
 - **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, **shadcn/ui** → deployed on Vercel
 - **Backend/DB**: Supabase (Postgres), Row-Level Security
 - **Auth**: Supabase Auth (email/password, no public signups)
-- **Payments**: Stripe (Card + ACH) — invoice-based
+- **Payments**: Stripe (Card + ACH) — invoice-based (sandbox/test mode)
 - **Email**: Supabase Edge Functions + SMTP (e.g. Gmail, Mailgun, or any SMTP provider)
 - **Cron**: Supabase pg_cron for monthly reminders
 
@@ -189,6 +189,8 @@ Postgres trigger `compute_report_fees()` runs BEFORE INSERT/UPDATE to calculate 
 
 ## Stripe Integration
 
+> **Re-activated (2026-03-31):** Client shared Stripe dashboard access. Currently in **sandbox/test mode** — will switch to live keys after validation.
+
 1. **Lazy customer creation**: On first invoice, create Stripe Customer for the office, store `stripe_customer_id`
 2. **Invoice flow** (in `submitReport` server action):
    - Create invoice items (royalty fee + advertising fee)
@@ -198,6 +200,7 @@ Postgres trigger `compute_report_fees()` runs BEFORE INSERT/UPDATE to calculate 
 3. **Webhook** (`/api/webhooks/stripe/route.ts`):
    - `invoice.paid` → status = 'paid', set `paid_at`
    - `invoice.payment_failed` → status = 'overdue'
+   - `invoice.finalized` → status = 'invoiced', store Stripe IDs
    - Verified by Stripe signature
 
 ---
@@ -263,12 +266,14 @@ Email sent via SMTP (configured in Supabase project settings or via Nodemailer i
 - Build Past Reports page (read-only table)
 - Build Account Settings page (password change)
 
-### Phase 3: Stripe Integration
-- Implement `lib/stripe/invoices.ts` (customer creation, invoice items, send)
-- Wire "Confirm & Generate Stripe Invoice" button → `submitReport` action
-- Build webhook handler at `/api/webhooks/stripe`
-- Enable ACH payments in Stripe dashboard
-- End-to-end test: submit → invoice → pay → status update
+### Phase 3: Stripe Integration — ACTIVE (sandbox/test mode)
+> **Re-activated (2026-03-31):** Client shared Stripe dashboard access.
+- Implement `lib/stripe/invoices.ts` — DONE
+- Wire submit button → `submitReport` action → Stripe invoice — DONE
+- Build webhook handler at `/api/webhooks/stripe` — DONE
+- Configure webhook endpoint in Stripe dashboard — DONE
+- End-to-end test: submit → invoice → pay → status update — TODO
+- Switch to live keys — TODO (after validation)
 
 ### Phase 4: Admin Panel
 - Build admin dashboard with OfficeStatusTable

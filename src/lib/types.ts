@@ -84,3 +84,29 @@ export interface FeeRateHistory {
   created_at: string;
   updated_at: string;
 }
+
+export interface AuditLogEntry {
+  id: string;
+  user_id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  changes: Record<string, unknown>;
+  created_at: string;
+  profile?: { full_name: string };
+}
+
+export interface OfficeWithReport extends Office {
+  currentReport: MonthlyReport | null;
+}
+
+export interface DashboardStats {
+  submissionRate: number;
+  totalGrossRevenue: number;
+  revenueChange: number;
+  feesCollected: number;
+  feesOutstanding: number;
+  overdueReports: number;
+  activeOffices: number;
+  daysUntilDeadline: number;
+}
