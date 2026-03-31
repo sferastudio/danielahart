@@ -64,6 +64,7 @@ export default async function PastReportsPage() {
                 <TableHead className="text-right">Advertising Fee</TableHead>
                 <TableHead className="text-right">Total Fees</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -102,6 +103,18 @@ export default async function PastReportsPage() {
                         {report.status.charAt(0).toUpperCase() +
                           report.status.slice(1)}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {report.status === "invoiced" && report.stripe_invoice_url && (
+                        <a
+                          href={report.stripe_invoice_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-bold text-brand-red hover:underline"
+                        >
+                          Pay Invoice
+                        </a>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

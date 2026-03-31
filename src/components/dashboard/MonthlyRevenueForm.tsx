@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useTransition } from "react";
-import { Calendar, ChevronRight } from "lucide-react";
+import { Calendar, ChevronRight, ExternalLink } from "lucide-react";
 import { CURRENCY_FORMATTER, PERCENTAGE_FORMATTER, REVENUE_FIELDS } from "@/lib/constants";
 import type { RevenueFieldName } from "@/lib/constants";
 import { useReportCalculations } from "@/hooks/useReportCalculations";
@@ -22,6 +22,7 @@ interface MonthlyRevenueFormProps {
     other_service_fees: number;
   };
   reportStatus?: string;
+  stripeInvoiceUrl?: string | null;
 }
 
 export function MonthlyRevenueForm({
@@ -31,6 +32,7 @@ export function MonthlyRevenueForm({
   advertisingPercentage,
   initialValues,
   reportStatus,
+  stripeInvoiceUrl,
 }: MonthlyRevenueFormProps) {
   const [values, setValues] = useState({
     tax_preparation_fees: initialValues?.tax_preparation_fees ?? 0,
@@ -182,21 +184,38 @@ export function MonthlyRevenueForm({
 
         {/* CTA */}
         <div className="flex items-center gap-6">
-          <button
-            onClick={handleSaveDraft}
-            disabled={isPending || isAlreadySubmitted}
-            className="px-6 py-4 border border-white/20 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest rounded-[4px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {isPending && !isSubmitting ? "Saving\u2026" : "Save Draft"}
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isPending || isSubmitting || isAlreadySubmitted}
-            className="flex-1 py-4 bg-brand-red hover:bg-brand-red-hover text-white font-black uppercase tracking-widest rounded-[4px] transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? "Submitting\u2026" : "Submit Report"}{" "}
-            <ChevronRight size={18} />
-          </button>
+          {reportStatus === "invoiced" && stripeInvoiceUrl ? (
+            <a
+              href={stripeInvoiceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 py-4 bg-brand-red hover:bg-brand-red-hover text-white font-black uppercase tracking-widest rounded-[4px] transition-all flex items-center justify-center gap-3"
+            >
+              Pay Invoice <ExternalLink size={18} />
+            </a>
+          ) : reportStatus === "paid" ? (
+            <div className="flex-1 py-4 bg-green-600 text-white font-black uppercase tracking-widest rounded-[4px] flex items-center justify-center gap-3">
+              Paid
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={handleSaveDraft}
+                disabled={isPending || isAlreadySubmitted}
+                className="px-6 py-4 border border-white/20 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest rounded-[4px] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {isPending && !isSubmitting ? "Saving\u2026" : "Save Draft"}
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={isPending || isSubmitting || isAlreadySubmitted}
+                className="flex-1 py-4 bg-brand-red hover:bg-brand-red-hover text-white font-black uppercase tracking-widest rounded-[4px] transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Submitting\u2026" : "Submit Report"}{" "}
+                <ChevronRight size={18} />
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

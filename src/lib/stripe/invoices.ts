@@ -76,3 +76,8 @@ export async function createAndSendInvoice(
     invoiceUrl: finalizedInvoice.hosted_invoice_url,
   };
 }
+
+export async function voidInvoice(invoiceId: string) {
+  const stripe = getStripe();
+  await stripe.invoices.voidInvoice(invoiceId);
+}

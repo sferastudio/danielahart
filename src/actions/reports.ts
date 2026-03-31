@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getOrCreateCustomer, createAndSendInvoice } from "@/lib/stripe/invoices";
+import { getOrCreateCustomer, createAndSendInvoice, voidInvoice } from "@/lib/stripe/invoices";
 
 interface ReportInput {
   report_month: string;
@@ -224,6 +224,39 @@ export async function adminSaveReport(officeId: string, input: ReportInput) {
     changes: reportData,
   });
 
+  // If report had an existing Stripe invoice, void it and create a new one
+  if (report.stripe_invoice_id) {
+    try {
+      await voidInvoice(report.stripe_invoice_id);
+
+      const { data: office } = await admin
+        .from("offices")
+        .select("*")
+        .eq("id", officeId)
+        .single();
+
+      if (office) {
+        const customerId = await getOrCreateCustomer(office);
+        const { invoiceId, invoiceUrl } = await createAndSendInvoice(
+          report,
+          office,
+          customerId
+        );
+
+        await admin
+          .from("monthly_reports")
+          .update({
+            stripe_invoice_id: invoiceId,
+            stripe_invoice_url: invoiceUrl,
+            status: "invoiced",
+          })
+          .eq("id", report.id);
+      }
+    } catch (stripeError) {
+      console.error("Stripe invoice update failed:", stripeError);
+    }
+  }
+
   return { success: true, report };
 }
 
@@ -292,6 +325,51 @@ export async function adminUpdateReport(
       after: report,
     },
   });
+
+  // If report has a Stripe invoice and revenue fields changed, void + recreate
+  const revenueFields = [
+    "tax_preparation_fees",
+    "bookkeeping_fees",
+    "insurance_commissions",
+    "notary_copy_fax_fees",
+    "translation_document_fees",
+    "other_service_fees",
+  ];
+  const revenueChanged = revenueFields.some(
+    (f) => f in updates && updates[f as keyof typeof updates] !== existing[f as keyof typeof existing]
+  );
+
+  if (existing.stripe_invoice_id && revenueChanged) {
+    try {
+      await voidInvoice(existing.stripe_invoice_id);
+
+      const { data: office } = await admin
+        .from("offices")
+        .select("*")
+        .eq("id", existing.office_id)
+        .single();
+
+      if (office && report) {
+        const customerId = await getOrCreateCustomer(office);
+        const { invoiceId, invoiceUrl } = await createAndSendInvoice(
+          report,
+          office,
+          customerId
+        );
+
+        await admin
+          .from("monthly_reports")
+          .update({
+            stripe_invoice_id: invoiceId,
+            stripe_invoice_url: invoiceUrl,
+            status: "invoiced",
+          })
+          .eq("id", reportId);
+      }
+    } catch (stripeError) {
+      console.error("Stripe invoice update failed:", stripeError);
+    }
+  }
 
   return { success: true, report };
 }

@@ -25,6 +25,7 @@ interface OfficeDashboardClientProps {
     translation_document_fees: number;
     other_service_fees: number;
     status: string;
+    stripe_invoice_url: string | null;
   } | null;
   recentReports: RecentReport[];
 }
@@ -88,6 +89,7 @@ export function OfficeDashboardClient({
               royaltyPercentage={royaltyPercentage}
               advertisingPercentage={advertisingPercentage}
               reportStatus={currentReport?.status}
+              stripeInvoiceUrl={currentReport?.stripe_invoice_url}
               initialValues={
                 currentReport
                   ? {
