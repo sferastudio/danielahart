@@ -120,7 +120,7 @@ export function OfficeDashboardClient({
           {/* Right Sidebar — 4 cols */}
           <div className="lg:col-span-4 space-y-6">
             <SubmissionStatus months={monthStatuses} />
-            {!period.is_overdue && period.days_remaining <= 5 && (
+            {!period.is_overdue && period.days_remaining <= 5 && !currentReport?.status?.match(/^(submitted|invoiced|paid)$/) && (
               <DeadlineWarning />
             )}
           </div>
