@@ -55,7 +55,7 @@ export function AdminDashboardClient({
     <>
       <Toaster richColors position="top-right" />
 
-      <div className="px-10 py-10 space-y-8">
+      <div className="px-4 md:px-10 py-6 md:py-10 space-y-6 md:space-y-8">
         {/* Period Selector */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -96,7 +96,7 @@ export function AdminDashboardClient({
         </div>
 
         {/* KPI Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
           <KpiCard
             title="Submissions"
             value={`${Math.round(stats.submissionRate * 100)}%`}

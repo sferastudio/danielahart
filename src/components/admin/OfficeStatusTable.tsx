@@ -216,12 +216,12 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
 
   return (
     <div className="bg-white rounded-[4px] border border-slate-200 shadow-sm">
-      <div className="p-6 border-b border-slate-100 space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="p-4 md:p-6 border-b border-slate-100 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h2 className="text-sm font-bold text-navy-900 uppercase tracking-widest">
             Franchisee Status — {periodLabel ?? "Current Month"}
           </h2>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-1.5 md:gap-2">
             {FILTER_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -229,7 +229,7 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
                   setFilter(opt.value);
                   setPage(0);
                 }}
-                className={`px-3 py-1 text-xs font-bold uppercase tracking-wide rounded-[4px] transition-all ${
+                className={`px-2.5 md:px-3 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wide rounded-[4px] transition-all ${
                   filter === opt.value
                     ? "bg-navy-900 text-white"
                     : "bg-slate-100 text-slate-500 hover:bg-slate-200"
@@ -392,7 +392,7 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
       </Table>
 
       {/* Pagination */}
-      <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+      <div className="px-4 md:px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm text-slate-500">
           <span>
             Showing {showingFrom}–{showingTo} of {totalItems}

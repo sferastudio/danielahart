@@ -23,7 +23,7 @@ export default function KpiCard({
 }: KpiCardProps) {
   return (
     <div
-      className={`rounded-[4px] border p-6 shadow-sm ${
+      className={`rounded-[4px] border p-4 md:p-6 shadow-sm overflow-hidden ${
         alert
           ? "border-red-200 bg-red-50"
           : "border-slate-200 bg-white"
@@ -33,12 +33,12 @@ export default function KpiCard({
         {title}
       </p>
 
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-2xl font-bold">{value}</span>
+      <div className="mt-2 flex flex-wrap items-baseline gap-1 md:gap-2">
+        <span className="text-lg md:text-2xl font-bold truncate max-w-full">{value}</span>
 
         {change !== undefined && (
           <span
-            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+            className={`inline-flex items-center rounded-full px-1.5 md:px-2 py-0.5 text-[10px] md:text-xs font-medium whitespace-nowrap ${
               change >= 0
                 ? "bg-green-50 text-green-700"
                 : "bg-red-50 text-red-700"
