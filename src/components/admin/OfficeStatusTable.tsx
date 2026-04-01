@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -104,6 +105,7 @@ function SortIcon({ column, sortColumn, sortDirection }: {
 }
 
 export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWithReport[]; periodLabel?: string }) {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -186,6 +188,7 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
     const result = await markAsPaid(reportId);
     if (result.success) {
       toast.success("Report marked as paid");
+      router.refresh();
     } else {
       toast.error(result.error ?? "Failed to mark as paid");
     }
