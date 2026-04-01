@@ -14,7 +14,7 @@ export default async function AdminSettingsPage() {
   return (
     <>
       <PageHeader title="Settings" subtitle="Admin Portal" />
-      <div className="px-10 py-10">
+      <div className="px-4 md:px-10 py-6 md:py-10">
         <div className="max-w-md">
           <div className="bg-white rounded-[4px] border border-slate-200 shadow-sm p-6">
             <h2 className="text-sm font-bold text-navy-900 uppercase tracking-widest mb-6">

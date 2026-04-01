@@ -33,7 +33,7 @@ export default async function SettingsPage() {
       <PageHeader title="ACCOUNT SETTINGS" subtitle="FRANCHISEE PORTAL" />
 
       {/* User Info */}
-      <div className="rounded-lg bg-white p-6 shadow-sm">
+      <div className="rounded-lg bg-white p-4 md:p-6 shadow-sm">
         <p className={`${STYLES.sectionHeader} mb-4`}>ACCOUNT INFORMATION</p>
         <div className="space-y-3 text-sm">
           <div className="flex justify-between border-b pb-2">
@@ -54,7 +54,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Change Password */}
-      <div className="rounded-lg bg-white p-6 shadow-sm">
+      <div className="rounded-lg bg-white p-4 md:p-6 shadow-sm">
         <p className={`${STYLES.sectionHeader} mb-4`}>CHANGE PASSWORD</p>
         <ChangePasswordForm />
       </div>

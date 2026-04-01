@@ -50,12 +50,13 @@ export default async function PastReportsPage() {
     <div className="space-y-6">
       <PageHeader title="PAST REPORTS" subtitle="FRANCHISEE PORTAL" />
 
-      <div className="rounded-lg bg-white p-6 shadow-sm">
+      <div className="rounded-lg bg-white p-4 md:p-6 shadow-sm">
         {!reports || reports.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No submitted reports yet.
           </p>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -142,6 +143,7 @@ export default async function PastReportsPage() {
               })}
             </TableBody>
           </Table>
+          </div>
         )}
       </div>
     </div>

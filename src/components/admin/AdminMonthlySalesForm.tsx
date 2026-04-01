@@ -179,7 +179,7 @@ export function AdminMonthlySalesForm({
               <ChevronLeft size={16} />
               Prev Month
             </Button>
-            <h2 className="text-lg font-bold text-navy-900 uppercase tracking-tight min-w-[200px] text-center">
+            <h2 className="text-lg font-bold text-navy-900 uppercase tracking-tight text-center">
               {monthLabel}
             </h2>
             <Button
@@ -239,7 +239,7 @@ export function AdminMonthlySalesForm({
               <h3 className="text-sm font-bold text-navy-900 uppercase tracking-widest mb-4">
                 Calculated Summary
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 md:gap-4">
                 <div className="bg-slate-50 rounded p-4 border border-slate-200">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
                     Total Gross

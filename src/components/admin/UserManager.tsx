@@ -250,7 +250,7 @@ export function UserManager({
             <DialogTitle>Add New User</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
               <div className="space-y-2">
                 <Label>Contact First Name</Label>
                 <Input
@@ -287,7 +287,7 @@ export function UserManager({
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
               <div className="space-y-2">
                 <Label>Dealer Email (Username)</Label>
                 <Input
@@ -318,7 +318,7 @@ export function UserManager({
                 }
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
               <div className="space-y-2">
                 <Label>Phone</Label>
                 <Input
@@ -349,7 +349,7 @@ export function UserManager({
                 }
               />
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
               <div className="space-y-2">
                 <Label>City</Label>
                 <Input
@@ -378,7 +378,7 @@ export function UserManager({
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 pt-2 border-t border-slate-100">
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"

@@ -157,7 +157,7 @@ export function OfficeManager({ offices }: { offices: Office[] }) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
               <div className="space-y-2">
                 <Label>Franchisee Name</Label>
                 <Input
@@ -182,7 +182,7 @@ export function OfficeManager({ offices }: { offices: Office[] }) {
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
               <div className="space-y-2">
                 <Label>Address</Label>
                 <Input
@@ -198,7 +198,7 @@ export function OfficeManager({ offices }: { offices: Office[] }) {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
               <div className="space-y-2">
                 <Label>Royalty %</Label>
                 <Input

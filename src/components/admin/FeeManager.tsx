@@ -80,7 +80,7 @@ export function FeeManager({
     <>
       <Toaster richColors position="top-right" />
 
-      <div className="bg-white rounded-[4px] border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-[4px] border border-slate-200 shadow-sm overflow-x-auto">
         <div className="p-6 border-b border-slate-100">
           <h2 className="text-sm font-bold text-navy-900 uppercase tracking-widest">
             Per-Franchisee Fee Rates

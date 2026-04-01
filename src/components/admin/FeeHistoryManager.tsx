@@ -230,7 +230,7 @@ export function FeeHistoryManager({
                               onChange={(e) =>
                                 updateRow(index, "percentage", e.target.value)
                               }
-                              className="w-28"
+                              className="w-20 md:w-28"
                             />
                             <span className="text-xs text-slate-400">
                               ({PERCENTAGE_FORMATTER(parseFloat(row.percentage) || 0)})
@@ -244,7 +244,7 @@ export function FeeHistoryManager({
                             onChange={(e) =>
                               updateRow(index, "start_month", e.target.value)
                             }
-                            className="w-40"
+                            className="w-28 md:w-40"
                           />
                         </TableCell>
                         <TableCell>
@@ -255,7 +255,7 @@ export function FeeHistoryManager({
                               onChange={(e) =>
                                 updateRow(index, "end_month", e.target.value)
                               }
-                              className="w-40"
+                              className="w-28 md:w-40"
                             />
                           ) : (
                             <div className="flex items-center gap-2">

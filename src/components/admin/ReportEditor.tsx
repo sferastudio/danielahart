@@ -225,7 +225,7 @@ export function ReportEditor({
             <DialogTitle>Edit Report</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
               {REVENUE_FIELDS.map((field) => (
                 <div key={field.name} className="space-y-1">
                   <Label className="text-xs">{field.label}</Label>

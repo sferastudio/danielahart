@@ -135,7 +135,7 @@ export function MonthlyRevenueForm({
       </div>
 
       {/* Input Grid — 6 fields in 3 rows of 2 */}
-      <div className="p-8 grid grid-cols-2 gap-x-10 gap-y-8">
+      <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-4 md:gap-x-10 gap-y-4 md:gap-y-8">
         {REVENUE_FIELDS.map((field) => (
           <div key={field.name} className="space-y-2">
             <div className="flex justify-between items-baseline">
@@ -192,7 +192,7 @@ export function MonthlyRevenueForm({
         </div>
 
         {/* Fee sub-boxes */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
           <div className="p-4 border border-white/10 rounded-[4px] bg-white/5">
             <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
               Royalty ({PERCENTAGE_FORMATTER(royaltyPercentage)})

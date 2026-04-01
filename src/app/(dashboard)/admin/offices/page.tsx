@@ -21,7 +21,7 @@ export default async function AdminOfficesPage() {
   return (
     <>
       <PageHeader title="Franchisee Management" subtitle="Admin Portal" />
-      <div className="px-10 py-10">
+      <div className="px-4 md:px-10 py-6 md:py-10">
         <OfficeManager offices={offices ?? []} />
       </div>
     </>

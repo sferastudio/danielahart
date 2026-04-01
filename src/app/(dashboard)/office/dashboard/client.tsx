@@ -79,7 +79,7 @@ export function OfficeDashboardClient({
         isOverdue={period.is_overdue}
       />
 
-      <div className="px-10 py-10">
+      <div className="px-4 md:px-10 py-6 md:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Main Form — 8 cols */}
           <div className="lg:col-span-8">

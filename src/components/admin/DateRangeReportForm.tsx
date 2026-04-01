@@ -224,7 +224,7 @@ export function DateRangeReportForm({
 
       {/* Filters */}
       <div className="bg-white rounded-[4px] border border-slate-200 shadow-sm p-6">
-        <div className="flex items-end gap-6 flex-wrap">
+        <div className="flex items-end gap-2 md:gap-6 flex-wrap">
           <div className="space-y-2">
             <Label>Start Month</Label>
             <Input
@@ -246,7 +246,7 @@ export function DateRangeReportForm({
             <select
               value={officeFilter}
               onChange={(e) => setOfficeFilter(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-w-[200px]"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm min-w-0"
             >
               <option value="">All Franchisees</option>
               {offices.map((o) => (

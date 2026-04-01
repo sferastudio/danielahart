@@ -59,10 +59,10 @@ export default async function OfficeDetailPage({
         title={office.name}
         subtitle={`Franchisee #${office.office_number}`}
       />
-      <div className="px-10 py-10 space-y-8">
+      <div className="px-4 md:px-10 py-6 md:py-10 space-y-8">
         {/* Franchisee Info Card */}
         <div className="bg-white rounded-[4px] border border-slate-200 shadow-sm p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Status</p>
               <Badge variant="outline">
