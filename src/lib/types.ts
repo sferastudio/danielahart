@@ -68,6 +68,7 @@ export interface MonthlyReport {
   edited_at: string | null;
   stripe_invoice_id: string | null;
   stripe_invoice_url: string | null;
+  stripe_invoice_pdf: string | null;
   paid_at: string | null;
   notes: string | null;
   created_at: string;

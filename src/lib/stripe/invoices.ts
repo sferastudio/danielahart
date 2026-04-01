@@ -74,10 +74,22 @@ export async function createAndSendInvoice(
   return {
     invoiceId: finalizedInvoice.id,
     invoiceUrl: finalizedInvoice.hosted_invoice_url,
+    invoicePdf: finalizedInvoice.invoice_pdf,
   };
 }
 
 export async function voidInvoice(invoiceId: string) {
   const stripe = getStripe();
   await stripe.invoices.voidInvoice(invoiceId);
+}
+
+export async function markInvoicePaidOutOfBand(invoiceId: string) {
+  const stripe = getStripe();
+  const invoice = await stripe.invoices.pay(invoiceId, {
+    paid_out_of_band: true,
+  });
+  return {
+    invoicePdf: invoice.invoice_pdf,
+    hostedInvoiceUrl: invoice.hosted_invoice_url,
+  };
 }

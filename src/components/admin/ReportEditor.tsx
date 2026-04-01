@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CURRENCY_FORMATTER, REVENUE_FIELDS } from "@/lib/constants";
-import { adminUpdateReport } from "@/actions/reports";
+import { adminUpdateReport, markAsPaid } from "@/actions/reports";
 import { toast, Toaster } from "sonner";
 import type { MonthlyReport, ReportStatus } from "@/lib/types";
 
@@ -158,7 +158,7 @@ export function ReportEditor({
                         report.status.slice(1)}
                     </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="space-x-1">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -166,6 +166,27 @@ export function ReportEditor({
                     >
                       Edit
                     </Button>
+                    {report.status !== "paid" && report.status !== "draft" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                        disabled={isPending}
+                        onClick={() => {
+                          startTransition(async () => {
+                            const result = await markAsPaid(report.id);
+                            if (result.success) {
+                              toast.success("Report marked as paid");
+                              router.refresh();
+                            } else {
+                              toast.error(result.error ?? "Failed to mark as paid");
+                            }
+                          });
+                        }}
+                      >
+                        Mark Paid
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );

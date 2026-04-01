@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
           .update({
             status: "paid",
             paid_at: new Date().toISOString(),
+            stripe_invoice_pdf: invoice.invoice_pdf,
+            stripe_invoice_url: invoice.hosted_invoice_url,
           })
           .eq("id", reportId);
       }

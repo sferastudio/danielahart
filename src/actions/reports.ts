@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getOrCreateCustomer, createAndSendInvoice, voidInvoice } from "@/lib/stripe/invoices";
+import { getOrCreateCustomer, createAndSendInvoice, voidInvoice, markInvoicePaidOutOfBand } from "@/lib/stripe/invoices";
 
 interface ReportInput {
   report_month: string;
@@ -158,7 +158,7 @@ export async function submitReport(input: ReportInput) {
           .eq("id", office_id);
       }
 
-      const { invoiceId, invoiceUrl } = await createAndSendInvoice(
+      const { invoiceId, invoiceUrl, invoicePdf } = await createAndSendInvoice(
         freshReport ?? report,
         office,
         customerId
@@ -170,6 +170,7 @@ export async function submitReport(input: ReportInput) {
         .update({
           stripe_invoice_id: invoiceId,
           stripe_invoice_url: invoiceUrl,
+          stripe_invoice_pdf: invoicePdf,
           status: "invoiced",
         })
         .eq("id", report.id);
@@ -253,7 +254,7 @@ export async function adminSaveReport(officeId: string, input: ReportInput) {
 
       if (office) {
         const customerId = await getOrCreateCustomer(office);
-        const { invoiceId, invoiceUrl } = await createAndSendInvoice(
+        const { invoiceId, invoiceUrl, invoicePdf } = await createAndSendInvoice(
           report,
           office,
           customerId
@@ -367,7 +368,7 @@ export async function adminUpdateReport(
 
       if (office && report) {
         const customerId = await getOrCreateCustomer(office);
-        const { invoiceId, invoiceUrl } = await createAndSendInvoice(
+        const { invoiceId, invoiceUrl, invoicePdf } = await createAndSendInvoice(
           report,
           office,
           customerId
@@ -426,4 +427,54 @@ export async function markReviewed(reportId: string) {
   });
 
   return { success: true, is_processed: true };
+}
+
+export async function markAsPaid(reportId: string) {
+  const ctx = await requireAdmin();
+  if ("error" in ctx) return { success: false, error: ctx.error };
+  const { admin, user } = ctx;
+
+  const { data: existing } = await admin
+    .from("monthly_reports")
+    .select("id, status, stripe_invoice_id")
+    .eq("id", reportId)
+    .single();
+
+  if (!existing) return { success: false, error: "Report not found" };
+  if (existing.status === "paid") return { success: false, error: "Report is already paid" };
+
+  const updateData: Record<string, unknown> = {
+    status: "paid",
+    paid_at: new Date().toISOString(),
+  };
+
+  // Mark the Stripe invoice as paid out of band if one exists
+  if (existing.stripe_invoice_id) {
+    try {
+      const { invoicePdf, hostedInvoiceUrl } = await markInvoicePaidOutOfBand(
+        existing.stripe_invoice_id
+      );
+      if (invoicePdf) updateData.stripe_invoice_pdf = invoicePdf;
+      if (hostedInvoiceUrl) updateData.stripe_invoice_url = hostedInvoiceUrl;
+    } catch (err) {
+      // Invoice may already be paid via Stripe — continue updating the report
+      console.error("Stripe mark paid failed:", err);
+    }
+  }
+
+  const { error } = await admin
+    .from("monthly_reports")
+    .update(updateData)
+    .eq("id", reportId);
+
+  if (error) return { success: false, error: error.message };
+
+  await admin.from("audit_log").insert({
+    user_id: user.id,
+    action: "mark_paid_manually",
+    entity_type: "monthly_report",
+    entity_id: reportId,
+  });
+
+  return { success: true };
 }

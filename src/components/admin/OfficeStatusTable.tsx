@@ -34,8 +34,9 @@ import {
   Eye,
   Bell,
   CheckCircle,
+  DollarSign,
 } from "lucide-react";
-import { sendReminder, markReviewed } from "@/actions/reports";
+import { sendReminder, markReviewed, markAsPaid } from "@/actions/reports";
 import { toast } from "sonner";
 
 const REPORT_STATUS_CLASSES: Record<string, string> = {
@@ -178,6 +179,15 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
       toast.success("Report marked as reviewed");
     } else {
       toast.error(result.error ?? "Failed to mark as reviewed");
+    }
+  };
+
+  const handleMarkAsPaid = async (reportId: string) => {
+    const result = await markAsPaid(reportId);
+    if (result.success) {
+      toast.success("Report marked as paid");
+    } else {
+      toast.error(result.error ?? "Failed to mark as paid");
     }
   };
 
@@ -352,6 +362,16 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
                           >
                             <CheckCircle className="size-4 mr-2" />
                             Mark Reviewed
+                          </DropdownMenuItem>
+                        )}
+                        {office.currentReport && office.currentReport.status !== "paid" && office.currentReport.status !== "draft" && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleMarkAsPaid(office.currentReport!.id)
+                            }
+                          >
+                            <DollarSign className="size-4 mr-2" />
+                            Mark as Paid
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>

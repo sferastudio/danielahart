@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
+import { ExternalLink, Download } from "lucide-react";
 import { STYLES, CURRENCY_FORMATTER, PERCENTAGE_FORMATTER } from "@/lib/constants";
 import {
   Table,
@@ -104,15 +105,35 @@ export default async function PastReportsPage() {
                           report.status.slice(1)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="space-x-2">
                       {report.status === "invoiced" && report.stripe_invoice_url && (
                         <a
                           href={report.stripe_invoice_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs font-bold text-brand-red hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-brand-red hover:underline"
                         >
-                          Pay Invoice
+                          Pay Invoice <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                      {report.status === "paid" && report.stripe_invoice_url && (
+                        <a
+                          href={report.stripe_invoice_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:underline"
+                        >
+                          View Receipt <ExternalLink className="size-3" />
+                        </a>
+                      )}
+                      {report.stripe_invoice_pdf && (
+                        <a
+                          href={report.stripe_invoice_pdf}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:underline"
+                        >
+                          PDF <Download className="size-3" />
                         </a>
                       )}
                     </TableCell>
