@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendEmail, adminNotificationEmail } from "../_shared/email.ts";
 
 Deno.serve(async (req) => {
   const supabase = createClient(
@@ -29,7 +30,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Fetch admin users to notify
+  // Fetch active admin profile IDs
   const { data: admins } = await supabase
     .from("profiles")
     .select("id")
@@ -37,30 +38,61 @@ Deno.serve(async (req) => {
     .eq("is_active", true);
 
   const office = report.offices;
-  const reportDate = new Date(report.report_month + "T00:00:00");
-  const monthLabel = reportDate.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
 
-  // Log notification for each admin
+  let sent = 0;
   for (const admin of admins ?? []) {
-    await supabase.from("email_log").insert({
-      recipient_email: `admin-${admin.id}`,
-      template: "admin_notification",
-      subject: `Report Submitted: ${office?.name ?? "Unknown"} — ${monthLabel}`,
-      status: "sent",
-      metadata: {
-        report_id,
-        office_name: office?.name,
-        total_gross: report.total_gross,
-        total_fees_due: report.total_fees_due,
+    // Look up actual email from auth.users
+    const { data: userData } = await supabase.auth.admin.getUserById(admin.id);
+    if (!userData?.user?.email) continue;
+
+    const adminEmail = userData.user.email;
+    const { subject, html } = adminNotificationEmail(
+      {
+        report_month: report.report_month,
+        total_gross: Number(report.total_gross),
+        total_fees_due: Number(report.total_fees_due),
       },
-    });
+      {
+        name: office?.name ?? "Unknown",
+        email: office?.email ?? "",
+        office_number: office?.office_number ?? "",
+      },
+      adminEmail
+    );
+
+    try {
+      const result = await sendEmail(adminEmail, subject, html);
+      await supabase.from("email_log").insert({
+        recipient_email: adminEmail,
+        template: "admin_notification",
+        subject,
+        status: "sent",
+        metadata: {
+          report_id,
+          office_name: office?.name,
+          total_gross: report.total_gross,
+          total_fees_due: report.total_fees_due,
+          resend_id: result.id,
+        },
+      });
+      sent++;
+    } catch (err) {
+      await supabase.from("email_log").insert({
+        recipient_email: adminEmail,
+        template: "admin_notification",
+        subject,
+        status: "failed",
+        error: err instanceof Error ? err.message : "Unknown error",
+        metadata: {
+          report_id,
+          office_name: office?.name,
+        },
+      });
+    }
   }
 
   return new Response(
-    JSON.stringify({ message: "Admin notifications sent" }),
+    JSON.stringify({ message: `Sent ${sent} admin notification emails` }),
     { headers: { "Content-Type": "application/json" } }
   );
 });

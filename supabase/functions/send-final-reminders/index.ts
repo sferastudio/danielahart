@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendEmail, reminderFinalEmail } from "../_shared/email.ts";
 
 Deno.serve(async () => {
   const supabase = createClient(
@@ -27,22 +28,30 @@ Deno.serve(async () => {
     .in("status", ["submitted", "invoiced", "paid"]);
 
   const submittedOfficeIds = new Set(
-    (submittedReports ?? []).map((r) => r.office_id)
+    (submittedReports ?? []).map((r: { office_id: string }) => r.office_id)
   );
 
-  const pendingOffices = offices.filter((o) => !submittedOfficeIds.has(o.id));
+  const pendingOffices = offices.filter((o: { id: string }) => !submittedOfficeIds.has(o.id));
 
   let sent = 0;
   for (const office of pendingOffices) {
+    const { subject, html } = reminderFinalEmail({
+      name: office.name,
+      email: office.email,
+      office_number: office.office_number,
+    });
+
     try {
+      const result = await sendEmail(office.email, subject, html);
       await supabase.from("email_log").insert({
         recipient_email: office.email,
         template: "reminder_final",
-        subject: `URGENT: Revenue Report Overdue — ${office.name}`,
+        subject,
         status: "sent",
         metadata: {
           office_id: office.id,
           report_month: reportMonth,
+          resend_id: result.id,
         },
       });
       sent++;
@@ -50,7 +59,7 @@ Deno.serve(async () => {
       await supabase.from("email_log").insert({
         recipient_email: office.email,
         template: "reminder_final",
-        subject: `URGENT: Revenue Report Overdue — ${office.name}`,
+        subject,
         status: "failed",
         error: err instanceof Error ? err.message : "Unknown error",
         metadata: {

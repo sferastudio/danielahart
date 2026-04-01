@@ -1,11 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const SMTP_HOST = Deno.env.get("SMTP_HOST") ?? "";
-const SMTP_PORT = parseInt(Deno.env.get("SMTP_PORT") ?? "587");
-const SMTP_USER = Deno.env.get("SMTP_USER") ?? "";
-const SMTP_PASS = Deno.env.get("SMTP_PASS") ?? "";
-const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "noreply@danielahart.com";
-const APP_URL = Deno.env.get("APP_URL") ?? "";
+import { sendEmail, reminderFirstEmail } from "../_shared/email.ts";
 
 Deno.serve(async () => {
   const supabase = createClient(
@@ -34,24 +28,31 @@ Deno.serve(async () => {
     .in("status", ["submitted", "invoiced", "paid"]);
 
   const submittedOfficeIds = new Set(
-    (submittedReports ?? []).map((r) => r.office_id)
+    (submittedReports ?? []).map((r: { office_id: string }) => r.office_id)
   );
 
   // Filter to offices that haven't submitted
-  const pendingOffices = offices.filter((o) => !submittedOfficeIds.has(o.id));
+  const pendingOffices = offices.filter((o: { id: string }) => !submittedOfficeIds.has(o.id));
 
   let sent = 0;
   for (const office of pendingOffices) {
+    const { subject, html } = reminderFirstEmail({
+      name: office.name,
+      email: office.email,
+      office_number: office.office_number,
+    });
+
     try {
-      // For now, log the email. In production, integrate with SMTP provider.
+      const result = await sendEmail(office.email, subject, html);
       await supabase.from("email_log").insert({
         recipient_email: office.email,
         template: "reminder_first",
-        subject: `Monthly Revenue Report Due — ${office.name}`,
+        subject,
         status: "sent",
         metadata: {
           office_id: office.id,
           report_month: reportMonth,
+          resend_id: result.id,
         },
       });
       sent++;
@@ -59,7 +60,7 @@ Deno.serve(async () => {
       await supabase.from("email_log").insert({
         recipient_email: office.email,
         template: "reminder_first",
-        subject: `Monthly Revenue Report Due — ${office.name}`,
+        subject,
         status: "failed",
         error: err instanceof Error ? err.message : "Unknown error",
         metadata: {
