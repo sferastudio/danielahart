@@ -15,7 +15,7 @@ const ICONS = {
   megaphone: Megaphone,
 } as const;
 
-interface NavItem {
+export interface NavItem {
   href: string;
   label: string;
   icon: keyof typeof ICONS;
@@ -23,9 +23,10 @@ interface NavItem {
 
 interface SidebarNavProps {
   items: NavItem[];
+  onNavigate?: () => void;
 }
 
-export function SidebarNav({ items }: SidebarNavProps) {
+export function SidebarNav({ items, onNavigate }: SidebarNavProps) {
   const pathname = usePathname();
 
   return (
@@ -38,6 +39,7 @@ export function SidebarNav({ items }: SidebarNavProps) {
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-[4px] transition-all border-l-4 ${
               isActive
                 ? "bg-[#F1F5F9] border-navy-900 text-navy-900 font-bold"
