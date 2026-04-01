@@ -134,6 +134,20 @@ export async function submitReport(input: ReportInput) {
       .single();
 
     if (office && report) {
+      // Re-read report with admin client to get trigger-computed fees
+      const { data: freshReport } = await admin
+        .from("monthly_reports")
+        .select("*")
+        .eq("id", report.id)
+        .single();
+
+      const totalFees = Number(freshReport?.total_fees_due ?? 0);
+
+      // Skip invoice creation if there are no fees to charge
+      if (totalFees <= 0) {
+        return { success: true, report: freshReport ?? report };
+      }
+
       const customerId = await getOrCreateCustomer(office);
 
       // Save stripe_customer_id if newly created
@@ -145,7 +159,7 @@ export async function submitReport(input: ReportInput) {
       }
 
       const { invoiceId, invoiceUrl } = await createAndSendInvoice(
-        report,
+        freshReport ?? report,
         office,
         customerId
       );
@@ -159,6 +173,8 @@ export async function submitReport(input: ReportInput) {
           status: "invoiced",
         })
         .eq("id", report.id);
+
+      return { success: true, report: freshReport ?? report, invoiceUrl };
     }
   } catch (stripeError) {
     // Report is saved but Stripe failed — log but don't fail the whole action

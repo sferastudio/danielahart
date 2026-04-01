@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Calendar, ChevronRight, ExternalLink } from "lucide-react";
 import { CURRENCY_FORMATTER, PERCENTAGE_FORMATTER, REVENUE_FIELDS } from "@/lib/constants";
 import type { RevenueFieldName } from "@/lib/constants";
@@ -44,6 +45,27 @@ export function MonthlyRevenueForm({
   });
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(reportStatus);
+  const [currentInvoiceUrl, setCurrentInvoiceUrl] = useState(stripeInvoiceUrl);
+  const router = useRouter();
+
+  // Refresh server data when user returns to the tab (e.g. after paying on Stripe)
+  useEffect(() => {
+    if (currentStatus !== "invoiced") return;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        router.refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [currentStatus, router]);
+
+  // Sync props back to local state when server data refreshes
+  useEffect(() => {
+    setCurrentStatus(reportStatus);
+    setCurrentInvoiceUrl(stripeInvoiceUrl);
+  }, [reportStatus, stripeInvoiceUrl]);
 
   const calculations = useReportCalculations({
     ...values,
@@ -56,7 +78,7 @@ export function MonthlyRevenueForm({
     setValues((prev) => ({ ...prev, [field]: num }));
   }, []);
 
-  const isAlreadySubmitted = reportStatus === "submitted" || reportStatus === "invoiced" || reportStatus === "paid";
+  const isAlreadySubmitted = currentStatus === "submitted" || currentStatus === "invoiced" || currentStatus === "paid";
 
   function handleSaveDraft() {
     startTransition(async () => {
@@ -86,7 +108,14 @@ export function MonthlyRevenueForm({
       });
       setIsSubmitting(false);
       if (result.success) {
-        toast.success("Report submitted successfully.");
+        if (result.invoiceUrl) {
+          setCurrentStatus("invoiced");
+          setCurrentInvoiceUrl(result.invoiceUrl);
+          toast.success("Report submitted. Invoice ready for payment.");
+        } else {
+          setCurrentStatus("submitted");
+          toast.success("Report submitted successfully.");
+        }
       } else {
         toast.error(result.error ?? "Failed to submit report");
       }
@@ -184,16 +213,16 @@ export function MonthlyRevenueForm({
 
         {/* CTA */}
         <div className="flex items-center gap-6">
-          {reportStatus === "invoiced" && stripeInvoiceUrl ? (
+          {currentStatus === "invoiced" && currentInvoiceUrl ? (
             <a
-              href={stripeInvoiceUrl}
+              href={currentInvoiceUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 py-4 bg-brand-red hover:bg-brand-red-hover text-white font-black uppercase tracking-widest rounded-[4px] transition-all flex items-center justify-center gap-3"
             >
               Pay Invoice <ExternalLink size={18} />
             </a>
-          ) : reportStatus === "paid" ? (
+          ) : currentStatus === "paid" ? (
             <div className="flex-1 py-4 bg-green-600 text-white font-black uppercase tracking-widest rounded-[4px] flex items-center justify-center gap-3">
               Paid
             </div>

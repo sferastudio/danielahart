@@ -31,8 +31,10 @@ interface ProfileWithOffice {
   role: UserRole;
   is_active: boolean;
   office_id: string | null;
+  contact_first_name: string | null;
+  contact_last_name: string | null;
   created_at: string;
-  offices: { name: string; office_number: string } | null;
+  offices: { name: string; office_number: string; phone: string | null; email: string | null } | null;
 }
 
 interface OfficeOption {
@@ -44,9 +46,11 @@ interface OfficeOption {
 export function UserManager({
   profiles,
   offices,
+  emailMap,
 }: {
   profiles: ProfileWithOffice[];
   offices: OfficeOption[];
+  emailMap: Record<string, string>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -158,6 +162,9 @@ export function UserManager({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Phone</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Franchisee</TableHead>
               <TableHead>Status</TableHead>
@@ -169,6 +176,17 @@ export function UserManager({
             {profiles.map((profile) => (
               <TableRow key={profile.id}>
                 <TableCell className="font-bold">{profile.full_name}</TableCell>
+                <TableCell className="text-sm text-slate-600">
+                  {emailMap[profile.id] || "—"}
+                </TableCell>
+                <TableCell className="text-sm text-slate-600">
+                  {profile.contact_first_name || profile.contact_last_name
+                    ? `${profile.contact_first_name ?? ""} ${profile.contact_last_name ?? ""}`.trim()
+                    : "—"}
+                </TableCell>
+                <TableCell className="text-sm text-slate-500">
+                  {profile.offices?.phone || "—"}
+                </TableCell>
                 <TableCell>
                   <Badge variant="outline">
                     {profile.role === "admin" ? "Admin" : "Franchisee"}
