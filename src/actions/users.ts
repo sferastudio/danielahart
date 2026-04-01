@@ -41,13 +41,25 @@ export async function createUser(input: CreateUserInput) {
   if ("error" in ctx) return { success: false, error: ctx.error };
   const { admin, user } = ctx;
 
+  const email = input.email?.trim();
+  const full_name = input.full_name?.trim();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return { success: false, error: "A valid email address is required" };
+  if (!input.password || input.password.length < 8)
+    return { success: false, error: "Password must be at least 8 characters" };
+  if (!full_name)
+    return { success: false, error: "Full name is required" };
+  if (input.role !== "admin" && input.role !== "sub_office")
+    return { success: false, error: "Role must be admin or sub_office" };
+
   const { data: authData, error: authError } =
     await admin.auth.admin.createUser({
-      email: input.email,
+      email: email,
       password: input.password,
       email_confirm: true,
       user_metadata: {
-        full_name: input.full_name,
+        full_name: full_name,
         role: input.role,
         office_id: input.office_id || null,
       },

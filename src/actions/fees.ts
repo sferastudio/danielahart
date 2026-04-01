@@ -36,6 +36,18 @@ export async function saveFeeHistory(
   if ("error" in ctx) return { success: false, error: ctx.error };
   const { admin, user } = ctx;
 
+  if (feeType !== "royalty" && feeType !== "advertising")
+    return { success: false, error: "Fee type must be royalty or advertising" };
+
+  for (const row of rows) {
+    if (row.percentage < 0 || row.percentage > 1)
+      return { success: false, error: "Fee percentage must be between 0 and 1" };
+    if (!row.start_month)
+      return { success: false, error: "Start month is required for each fee period" };
+    if (row.end_month && row.end_month <= row.start_month)
+      return { success: false, error: "End month must be after start month" };
+  }
+
   // Delete existing rows for this office+feeType, then insert new ones
   const { error: deleteError } = await admin
     .from("fee_rate_history")
@@ -110,6 +122,11 @@ export async function updateOfficeFees(
   const ctx = await requireAdmin();
   if ("error" in ctx) return { success: false, error: ctx.error };
   const { admin, user } = ctx;
+
+  if (royaltyPercentage < 0 || royaltyPercentage > 1)
+    return { success: false, error: "Royalty percentage must be between 0 and 1" };
+  if (advertisingPercentage < 0 || advertisingPercentage > 1)
+    return { success: false, error: "Advertising percentage must be between 0 and 1" };
 
   const { data: existing } = await admin
     .from("offices")
