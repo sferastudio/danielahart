@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { createUser, updateUserStatus, deleteUser } from "@/actions/users";
+import { createUser, updateUserStatus, deleteUser, resetUserPassword } from "@/actions/users";
 import { toast, Toaster } from "sonner";
 import type { UserRole } from "@/lib/types";
 
@@ -71,6 +71,9 @@ export function UserManager({
     zip: "",
     is_active: true,
   });
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetTarget, setResetTarget] = useState<{ id: string; name: string } | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   function handleCreate() {
     startTransition(async () => {
@@ -137,6 +140,21 @@ export function UserManager({
         router.refresh();
       } else {
         toast.error(result.error ?? "Failed to delete user");
+      }
+    });
+  }
+
+  function handleResetPassword() {
+    if (!resetTarget) return;
+    startTransition(async () => {
+      const result = await resetUserPassword(resetTarget.id, newPassword);
+      if (result.success) {
+        toast.success(`Password updated for ${resetTarget.name}`);
+        setShowResetPassword(false);
+        setResetTarget(null);
+        setNewPassword("");
+      } else {
+        toast.error(result.error ?? "Failed to reset password");
       }
     });
   }
@@ -223,6 +241,18 @@ export function UserManager({
                       disabled={isPending}
                     >
                       {profile.is_active ? "Suspend" : "Reactivate"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setResetTarget({ id: profile.id, name: profile.full_name });
+                        setNewPassword("");
+                        setShowResetPassword(true);
+                      }}
+                      disabled={isPending}
+                    >
+                      Reset Password
                     </Button>
                     <Button
                       variant="ghost"
@@ -418,6 +448,41 @@ export function UserManager({
               className="bg-brand-red hover:bg-brand-red-hover text-white"
             >
               {isPending ? "Creating..." : "Create User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={showResetPassword} onOpenChange={setShowResetPassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-slate-500">
+              Set a new password for <strong>{resetTarget?.name}</strong>.
+            </p>
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Minimum 8 characters"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowResetPassword(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResetPassword}
+              disabled={isPending || newPassword.length < 8}
+              className="bg-brand-red hover:bg-brand-red-hover text-white"
+            >
+              {isPending ? "Updating..." : "Update Password"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -154,3 +154,28 @@ export async function deleteUser(profileId: string) {
 
   return { success: true };
 }
+
+export async function resetUserPassword(userId: string, newPassword: string) {
+  const ctx = await requireAdmin();
+  if ("error" in ctx) return { success: false, error: ctx.error };
+  const { admin, user } = ctx;
+
+  if (!newPassword || newPassword.length < 8)
+    return { success: false, error: "Password must be at least 8 characters" };
+
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    password: newPassword,
+  });
+
+  if (error) return { success: false, error: error.message };
+
+  await admin.from("audit_log").insert({
+    user_id: user.id,
+    action: "reset_password",
+    entity_type: "profile",
+    entity_id: userId,
+    changes: { password_reset: true },
+  });
+
+  return { success: true };
+}
