@@ -57,10 +57,6 @@ export default async function PastReportsPage() {
     ? new Date(office.created_at)
     : new Date();
 
-  // Generate all months from office creation through current month
-  const now = new Date();
-  const allMonths = generateMonthList(officeCreated, now);
-
   // Fetch all filed reports (excluding drafts)
   const { data: reports } = await supabase
     .from("monthly_reports")
@@ -72,6 +68,18 @@ export default async function PastReportsPage() {
   const reportsByMonth = new Map(
     (reports ?? []).map((r) => [r.report_month, r])
   );
+
+  // Use earliest report date or office creation, whichever is earlier
+  const earliestReport = reports?.length
+    ? new Date(
+        reports.reduce((min, r) => (r.report_month < min ? r.report_month : min), reports[0].report_month) + "T00:00:00"
+      )
+    : null;
+  const startDate = earliestReport && earliestReport < officeCreated ? earliestReport : officeCreated;
+
+  // Generate all months from start date through current month
+  const now = new Date();
+  const allMonths = generateMonthList(startDate, now);
 
   return (
     <div className="space-y-6">
