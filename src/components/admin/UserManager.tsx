@@ -228,7 +228,7 @@ export function UserManager({
                   </Badge>
                 </TableCell>
                 <TableCell className="text-xs text-slate-400">
-                  {new Date(profile.created_at).toLocaleDateString()}
+                  {new Date(profile.created_at).toLocaleDateString("en-US")}
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-2">

@@ -74,13 +74,14 @@ export function DashboardShell({ navItems, userLabel, children }: DashboardShell
             alt="Daniel Ahart Tax"
             width={120}
             height={30}
-            className="h-7 w-auto object-contain"
+            className="h-7 object-contain"
+            style={{ width: "auto" }}
           />
           <div className="w-8" /> {/* Spacer for centering */}
         </div>
 
         <main className="flex-1 overflow-y-auto flex flex-col">
-          <div className="flex-1">{children}</div>
+          {children}
           <Footer />
         </main>
       </div>
@@ -107,7 +108,8 @@ function SidebarContent({
           width={160}
           height={40}
           priority
-          className="h-10 w-auto object-contain"
+          className="h-10 object-contain"
+          style={{ width: "auto" }}
         />
         <div className="mt-4 flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
