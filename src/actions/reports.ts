@@ -124,6 +124,24 @@ export async function submitReport(input: ReportInput) {
 
   if (error) return { success: false, error: error.message };
 
+  // Notify admins via Edge Function (fire-and-forget)
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (supabaseUrl && serviceRoleKey && report) {
+      fetch(`${supabaseUrl}/functions/v1/on-report-submitted`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ report_id: report.id }),
+      }).catch((err) => console.error("Admin notification email failed:", err));
+    }
+  } catch {
+    // Non-critical — don't block submission
+  }
+
   // Generate Stripe invoice
   try {
     const admin = createAdminClient();
@@ -396,7 +414,36 @@ export async function sendReminder(officeId: string) {
   if ("error" in ctx) return { success: false, error: ctx.error };
   const { admin, user } = ctx;
 
-  // Email integration is future work — just log for now
+  // Fetch office details for the email
+  const { data: office } = await admin
+    .from("offices")
+    .select("id, name, email, office_number")
+    .eq("id", officeId)
+    .single();
+
+  if (!office || !office.email) {
+    return { success: false, error: "Office not found or has no email" };
+  }
+
+  // Send reminder via Edge Function
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (supabaseUrl && serviceRoleKey) {
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/send-reminder-emails`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ office_id: officeId }),
+      });
+    } catch (err) {
+      console.error("Reminder email failed:", err);
+      return { success: false, error: "Failed to send reminder email" };
+    }
+  }
+
   await admin.from("audit_log").insert({
     user_id: user.id,
     action: "send_reminder",
