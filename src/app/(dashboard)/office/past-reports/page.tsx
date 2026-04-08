@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Download } from "lucide-react";
 import Link from "next/link";
-import { CURRENCY_FORMATTER, PERCENTAGE_FORMATTER } from "@/lib/constants";
+import { CURRENCY_FORMATTER, PERCENTAGE_FORMATTER, getCurrentReportMonth } from "@/lib/constants";
 import {
   Table,
   TableBody,
@@ -77,9 +77,11 @@ export default async function PastReportsPage() {
     : null;
   const startDate = earliestReport && earliestReport < officeCreated ? earliestReport : officeCreated;
 
-  // Generate all months from start date through current month
-  const now = new Date();
-  const allMonths = generateMonthList(startDate, now);
+  // Generate all months from start date through the active reporting period
+  // (prior calendar month). The active period itself is included so franchisees
+  // can file it from this list; future months are excluded until they open.
+  const activePeriod = new Date(getCurrentReportMonth() + "T00:00:00");
+  const allMonths = generateMonthList(startDate, activePeriod);
 
   return (
     <div className="space-y-6">

@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DateRangeReportForm } from "@/components/admin/DateRangeReportForm";
+import { getCurrentReportMonth } from "@/lib/constants";
 
 export default async function AdminReportsPage() {
   const supabase = await createClient();
@@ -20,9 +21,8 @@ export default async function AdminReportsPage() {
     .select("id, name, office_number, royalty_percentage, advertising_percentage, status")
     .order("name");
 
-  // Default: fetch current month reports
-  const now = new Date();
-  const reportMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  // Default: fetch active reporting period (prior calendar month)
+  const reportMonth = getCurrentReportMonth();
 
   const { data: reports } = await admin
     .from("monthly_reports")

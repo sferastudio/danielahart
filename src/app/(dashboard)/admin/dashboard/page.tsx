@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { AdminDashboardClient } from "@/components/admin/AdminDashboardClient";
 import { computeDashboardStats } from "@/lib/dashboard-stats";
 import { AuditLogEntry } from "@/lib/types";
+import { getCurrentReportMonth } from "@/lib/constants";
 
 function formatMonthLabel(monthStr: string): string {
   const [year, month] = monthStr.split("-");
@@ -34,8 +35,8 @@ export default async function AdminDashboardPage({
     .order("report_month", { ascending: true })
     .limit(1);
 
-  const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  // Active reporting period is the prior calendar month.
+  const currentMonth = getCurrentReportMonth();
 
   // Build continuous month list from earliest data through current month (descending)
   const allMonths: string[] = [];

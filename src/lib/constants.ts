@@ -15,6 +15,15 @@ export const PERCENTAGE_FORMATTER = (v: number) => `${(v * 100).toFixed(2)}%`;
 
 export const REPORT_DEADLINE_DAY = 5;
 
+/**
+ * Returns the active reporting period (prior calendar month) as a YYYY-MM-01 string.
+ * Franchisees report on the completed prior month — e.g., in April they file March.
+ */
+export function getCurrentReportMonth(now: Date = new Date()): string {
+  const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
 export const REVENUE_FIELDS = [
   {
     name: "tax_preparation_fees" as const,

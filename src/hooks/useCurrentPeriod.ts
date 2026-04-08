@@ -1,16 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
-import { REPORT_DEADLINE_DAY } from "@/lib/constants";
+import { REPORT_DEADLINE_DAY, getCurrentReportMonth } from "@/lib/constants";
 
 export function useCurrentPeriod() {
   return useMemo(() => {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+    // Active reporting period is the prior calendar month.
+    const current_month_date = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-    const current_month_date = new Date(year, month, 1);
-    const deadline_date = new Date(year, month, REPORT_DEADLINE_DAY);
+    // Deadline is the 5th of the month following the reporting period
+    // (i.e. the current calendar month).
+    const deadline_date = new Date(now.getFullYear(), now.getMonth(), REPORT_DEADLINE_DAY);
 
     const diff = deadline_date.getTime() - now.getTime();
     const days_remaining = Math.ceil(diff / (1000 * 60 * 60 * 24));
@@ -30,7 +31,7 @@ export function useCurrentPeriod() {
       .toUpperCase()}`;
 
     // report_month is always 1st of month in ISO format
-    const report_month = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+    const report_month = getCurrentReportMonth(now);
 
     return {
       current_month,

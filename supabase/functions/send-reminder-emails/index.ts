@@ -7,8 +7,11 @@ Deno.serve(async () => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
+  // Active reporting period is the prior calendar month — franchisees file
+  // March during April, etc.
   const now = new Date();
-  const reportMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const period = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const reportMonth = `${period.getFullYear()}-${String(period.getMonth() + 1).padStart(2, "0")}-01`;
 
   // Get all active offices
   const { data: offices } = await supabase

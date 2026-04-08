@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getCurrentReportMonth } from "@/lib/constants";
 import { OfficeDashboardClient } from "./client";
 
 export default async function OfficeDashboardPage({
@@ -27,9 +28,8 @@ export default async function OfficeDashboardPage({
   const royaltyPercentage = Number(office?.royalty_percentage ?? 0.10);
   const advertisingPercentage = Number(office?.advertising_percentage ?? 0.02);
 
-  // Determine report month: use ?month= param if valid, else current month
-  const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  // Determine report month: use ?month= param if valid, else active period (prior calendar month)
+  const currentMonth = getCurrentReportMonth();
 
   const params = await searchParams;
   let reportMonth = currentMonth;
