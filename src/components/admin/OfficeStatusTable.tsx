@@ -36,8 +36,9 @@ import {
   Bell,
   CheckCircle,
   DollarSign,
+  RefreshCw,
 } from "lucide-react";
-import { sendReminder, markReviewed, markAsPaid } from "@/actions/reports";
+import { sendReminder, markReviewed, markAsPaid, reissueInvoice } from "@/actions/reports";
 import { toast } from "sonner";
 
 const REPORT_STATUS_CLASSES: Record<string, string> = {
@@ -191,6 +192,16 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
       router.refresh();
     } else {
       toast.error(result.error ?? "Failed to mark as paid");
+    }
+  };
+
+  const handleReissueInvoice = async (reportId: string) => {
+    const result = await reissueInvoice(reportId);
+    if (result.success) {
+      toast.success("Invoice re-issued");
+      router.refresh();
+    } else {
+      toast.error(result.error ?? "Failed to re-issue invoice");
     }
   };
 
@@ -365,6 +376,16 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
                           >
                             <CheckCircle className="size-4 mr-2" />
                             Mark Reviewed
+                          </DropdownMenuItem>
+                        )}
+                        {office.currentReport && office.currentReport.status !== "paid" && office.currentReport.status !== "draft" && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleReissueInvoice(office.currentReport!.id)
+                            }
+                          >
+                            <RefreshCw className="size-4 mr-2" />
+                            Re-issue Invoice
                           </DropdownMenuItem>
                         )}
                         {office.currentReport && office.currentReport.status !== "paid" && office.currentReport.status !== "draft" && (

@@ -477,6 +477,90 @@ export async function markReviewed(reportId: string) {
   return { success: true, is_processed: true };
 }
 
+export async function reissueInvoice(reportId: string) {
+  const ctx = await requireAdmin();
+  if ("error" in ctx) return { success: false, error: ctx.error };
+  const { admin, user } = ctx;
+
+  const { data: report } = await admin
+    .from("monthly_reports")
+    .select("*")
+    .eq("id", reportId)
+    .single();
+
+  if (!report) return { success: false, error: "Report not found" };
+  if (report.status === "paid")
+    return { success: false, error: "Cannot re-issue a paid report" };
+  if (report.status === "draft")
+    return { success: false, error: "Cannot re-issue a draft report" };
+  if (Number(report.total_fees_due ?? 0) <= 0)
+    return { success: false, error: "Report has no fees to invoice" };
+
+  const { data: office } = await admin
+    .from("offices")
+    .select("*")
+    .eq("id", report.office_id)
+    .single();
+
+  if (!office) return { success: false, error: "Office not found" };
+
+  // Void the previous invoice if it exists and is still alive
+  if (report.stripe_invoice_id) {
+    try {
+      await voidInvoice(report.stripe_invoice_id);
+    } catch (err) {
+      console.error("Could not void previous invoice:", err);
+      // Continue anyway — the previous invoice may not exist in current Stripe mode
+    }
+  }
+
+  try {
+    const customerId = await getOrCreateCustomer(office);
+
+    if (!office.stripe_customer_id) {
+      await admin
+        .from("offices")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", office.id);
+    }
+
+    const { invoiceId, invoiceUrl, invoicePdf } = await createAndSendInvoice(
+      report,
+      office,
+      customerId
+    );
+
+    await admin
+      .from("monthly_reports")
+      .update({
+        stripe_invoice_id: invoiceId,
+        stripe_invoice_url: invoiceUrl,
+        stripe_invoice_pdf: invoicePdf,
+        status: "invoiced",
+      })
+      .eq("id", reportId);
+
+    await admin.from("audit_log").insert({
+      user_id: user.id,
+      action: "reissue_invoice",
+      entity_type: "monthly_report",
+      entity_id: reportId,
+      changes: {
+        previous_invoice_id: report.stripe_invoice_id,
+        new_invoice_id: invoiceId,
+      },
+    });
+
+    return { success: true, invoiceUrl };
+  } catch (err) {
+    console.error("Re-issue invoice failed:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to create invoice",
+    };
+  }
+}
+
 export async function markAsPaid(reportId: string) {
   const ctx = await requireAdmin();
   if ("error" in ctx) return { success: false, error: ctx.error };

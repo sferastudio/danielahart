@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CURRENCY_FORMATTER, REVENUE_FIELDS } from "@/lib/constants";
-import { adminUpdateReport, markAsPaid } from "@/actions/reports";
+import { adminUpdateReport, markAsPaid, reissueInvoice } from "@/actions/reports";
 import { toast, Toaster } from "sonner";
 import type { MonthlyReport, ReportStatus } from "@/lib/types";
 
@@ -166,6 +166,27 @@ export function ReportEditor({
                     >
                       Edit
                     </Button>
+                    {report.status !== "paid" && report.status !== "draft" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-700 hover:text-blue-800 hover:bg-blue-50"
+                        disabled={isPending}
+                        onClick={() => {
+                          startTransition(async () => {
+                            const result = await reissueInvoice(report.id);
+                            if (result.success) {
+                              toast.success("Invoice re-issued");
+                              router.refresh();
+                            } else {
+                              toast.error(result.error ?? "Failed to re-issue invoice");
+                            }
+                          });
+                        }}
+                      >
+                        Re-issue Invoice
+                      </Button>
+                    )}
                     {report.status !== "paid" && report.status !== "draft" && (
                       <Button
                         variant="ghost"
