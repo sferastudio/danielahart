@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentReportMonth } from "@/lib/constants";
 import { OfficeDashboardClient } from "./client";
+import { getActiveOfficeId } from "@/lib/office-context";
 
 export default async function OfficeDashboardPage({
   searchParams,
@@ -15,8 +16,7 @@ export default async function OfficeDashboardPage({
 
   if (!user) redirect("/login");
 
-  const office_id =
-    user.app_metadata?.office_id ?? user.user_metadata?.office_id;
+  const office_id = await getActiveOfficeId(user.id);
 
   // Fetch per-office fee rates
   const { data: office } = await supabase

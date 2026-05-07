@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { getUserOffices, getActiveOfficeId } from "@/lib/office-context";
 
 export default async function DashboardLayout({
   children,
@@ -22,8 +23,15 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single();
 
+  // Get all offices this user can access
+  const userOffices = role === "sub_office" ? await getUserOffices(user.id) : [];
+  const activeOfficeId = role === "sub_office" ? await getActiveOfficeId(user.id) : null;
+
   let officeName = "";
-  if (profile?.office_id) {
+  if (activeOfficeId) {
+    const active = userOffices.find((o) => o.id === activeOfficeId);
+    officeName = active?.name ?? "";
+  } else if (profile?.office_id) {
     const { data: office } = await supabase
       .from("offices")
       .select("name")
@@ -52,7 +60,12 @@ export default async function DashboardLayout({
   const userLabel = officeName || profile?.full_name || user.email || "";
 
   return (
-    <DashboardShell navItems={navItems} userLabel={userLabel}>
+    <DashboardShell
+      navItems={navItems}
+      userLabel={userLabel}
+      offices={userOffices}
+      activeOfficeId={activeOfficeId ?? ""}
+    >
       {children}
     </DashboardShell>
   );

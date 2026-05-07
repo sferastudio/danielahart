@@ -78,6 +78,13 @@ export async function createUser(input: CreateUserInput) {
       .eq("id", authData.user.id);
   }
 
+  // Link user to office in junction table for multi-office support
+  if (input.office_id) {
+    await admin
+      .from("user_offices")
+      .insert({ user_id: authData.user.id, office_id: input.office_id });
+  }
+
   // Update office address fields if office is assigned
   if (input.office_id) {
     const officeUpdates: Record<string, string | null> = {};

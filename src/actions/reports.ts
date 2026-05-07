@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getOrCreateCustomer, createAndSendInvoice, voidInvoice, markInvoicePaidOutOfBand } from "@/lib/stripe/invoices";
+import { getActiveOfficeId } from "@/lib/office-context";
 
 interface ReportInput {
   report_month: string;
@@ -26,7 +27,7 @@ async function getSubOfficeContext() {
   if (role !== "sub_office")
     return { error: "Only sub_office users can manage reports" };
 
-  const office_id = user.user_metadata?.office_id;
+  const office_id = await getActiveOfficeId(user.id);
   if (!office_id) return { error: "No office assigned" };
 
   return { supabase, user, office_id, role };

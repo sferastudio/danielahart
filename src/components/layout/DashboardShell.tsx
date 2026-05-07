@@ -7,14 +7,17 @@ import { Menu, X } from "lucide-react";
 import { SidebarNav, type NavItem } from "@/app/(dashboard)/sidebar-nav";
 import { LogoutButton } from "@/app/(dashboard)/logout-button";
 import { Footer } from "@/components/layout/Footer";
+import { OfficeSwitcher } from "@/components/layout/OfficeSwitcher";
 
 interface DashboardShellProps {
   navItems: NavItem[];
   userLabel: string;
+  offices?: { id: string; name: string; office_number: string }[];
+  activeOfficeId?: string;
   children: React.ReactNode;
 }
 
-export function DashboardShell({ navItems, userLabel, children }: DashboardShellProps) {
+export function DashboardShell({ navItems, userLabel, offices, activeOfficeId, children }: DashboardShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
 
@@ -27,7 +30,7 @@ export function DashboardShell({ navItems, userLabel, children }: DashboardShell
     <div className="flex h-screen bg-[#F8FAFC] font-sans text-navy-900">
       {/* Desktop sidebar — hidden on mobile */}
       <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 flex-col z-20">
-        <SidebarContent navItems={navItems} userLabel={userLabel} />
+        <SidebarContent navItems={navItems} userLabel={userLabel} offices={offices} activeOfficeId={activeOfficeId} />
       </aside>
 
       {/* Mobile drawer overlay */}
@@ -54,6 +57,8 @@ export function DashboardShell({ navItems, userLabel, children }: DashboardShell
         <SidebarContent
           navItems={navItems}
           userLabel={userLabel}
+          offices={offices}
+          activeOfficeId={activeOfficeId}
           onNavigate={() => setDrawerOpen(false)}
         />
       </aside>
@@ -92,10 +97,14 @@ export function DashboardShell({ navItems, userLabel, children }: DashboardShell
 function SidebarContent({
   navItems,
   userLabel,
+  offices,
+  activeOfficeId,
   onNavigate,
 }: {
   navItems: NavItem[];
   userLabel: string;
+  offices?: { id: string; name: string; office_number: string }[];
+  activeOfficeId?: string;
   onNavigate?: () => void;
 }) {
   return (
@@ -117,6 +126,11 @@ function SidebarContent({
             Platform Online
           </span>
         </div>
+        {offices && offices.length > 1 && activeOfficeId && (
+          <div className="mt-4">
+            <OfficeSwitcher offices={offices} activeOfficeId={activeOfficeId} />
+          </div>
+        )}
       </div>
 
       {/* Navigation */}

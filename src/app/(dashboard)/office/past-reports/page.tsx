@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Download } from "lucide-react";
 import Link from "next/link";
 import { CURRENCY_FORMATTER, PERCENTAGE_FORMATTER, getCurrentReportMonth } from "@/lib/constants";
+import { getActiveOfficeId } from "@/lib/office-context";
 import {
   Table,
   TableBody,
@@ -43,8 +44,7 @@ export default async function PastReportsPage() {
 
   if (!user) redirect("/login");
 
-  const office_id =
-    user.app_metadata?.office_id ?? user.user_metadata?.office_id;
+  const office_id = await getActiveOfficeId(user.id);
 
   // Fetch office creation date for month range
   const { data: office } = await supabase
