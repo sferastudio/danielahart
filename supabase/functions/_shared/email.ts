@@ -44,6 +44,11 @@ interface ReportInfo {
   total_fees_due: number;
 }
 
+interface InvoicedReportInfo {
+  report_month: string;
+  total_fees_due: number;
+}
+
 function baseTemplate(content: string) {
   return `<!DOCTYPE html>
 <html>
@@ -139,4 +144,31 @@ export function adminNotificationEmail(
     </p>
   `);
   return { subject, html, to: adminEmail };
+}
+
+export function reportInvoicedEmail(
+  report: InvoicedReportInfo,
+  office: OfficeInfo,
+  qbInvoiceNumber: string | null
+) {
+  const date = new Date(report.report_month + "T00:00:00");
+  const monthLabel = date.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const subject = `Your ${monthLabel} report has been invoiced`;
+  const refLine = qbInvoiceNumber
+    ? `<p style="color: #64748b; font-size: 14px;">Reference: <strong>${qbInvoiceNumber}</strong></p>`
+    : "";
+
+  const html = baseTemplate(`
+    <h2 style="color: #00213B; margin-top: 0;">Your invoice is on the way</h2>
+    <p>Hello <strong>${office.name}</strong>,</p>
+    <p>Your monthly report for <strong>${monthLabel}</strong> has been invoiced. Total fees due: <strong>$${report.total_fees_due.toFixed(2)}</strong>.</p>
+    <p>You will receive a separate email shortly from <strong>QuickBooks (Intuit)</strong> with the invoice and payment instructions. If you don't see it within an hour, please check your spam folder.</p>
+    ${refLine}
+    <p style="color: #64748b; font-size: 14px; margin-top: 24px;">If you have questions, reply to this email and the corporate team will get back to you.</p>
+  `);
+  return { subject, html, to: office.email };
 }

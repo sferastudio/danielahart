@@ -115,7 +115,6 @@ export function OfficeDashboardClient({
               royaltyPercentage={royaltyPercentage}
               advertisingPercentage={advertisingPercentage}
               reportStatus={currentReport?.status}
-              stripeInvoiceUrl={currentReport?.stripe_invoice_url}
               initialValues={
                 currentReport
                   ? {

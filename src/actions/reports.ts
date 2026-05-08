@@ -2,7 +2,6 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getOrCreateCustomer, createAndSendInvoice, voidInvoice, markInvoicePaidOutOfBand } from "@/lib/stripe/invoices";
 import { getActiveOfficeId } from "@/lib/office-context";
 
 interface ReportInput {
@@ -83,7 +82,6 @@ export async function submitReport(input: ReportInput) {
   if ("error" in ctx) return { success: false, error: ctx.error };
   const { supabase, user, office_id } = ctx;
 
-  // Validate all fields are non-negative
   const fields = [
     input.tax_preparation_fees,
     input.bookkeeping_fees,
@@ -143,69 +141,6 @@ export async function submitReport(input: ReportInput) {
     // Non-critical — don't block submission
   }
 
-  // Generate Stripe invoice
-  try {
-    const admin = createAdminClient();
-    const { data: office } = await admin
-      .from("offices")
-      .select("*")
-      .eq("id", office_id)
-      .single();
-
-    if (office && report) {
-      // Re-read report with admin client to get trigger-computed fees
-      const { data: freshReport } = await admin
-        .from("monthly_reports")
-        .select("*")
-        .eq("id", report.id)
-        .single();
-
-      const totalFees = Number(freshReport?.total_fees_due ?? 0);
-
-      // Skip invoice creation if there are no fees to charge
-      if (totalFees <= 0) {
-        return { success: true, report: freshReport ?? report };
-      }
-
-      const customerId = await getOrCreateCustomer(office);
-
-      // Save stripe_customer_id if newly created
-      if (!office.stripe_customer_id) {
-        await admin
-          .from("offices")
-          .update({ stripe_customer_id: customerId })
-          .eq("id", office_id);
-      }
-
-      const { invoiceId, invoiceUrl, invoicePdf } = await createAndSendInvoice(
-        freshReport ?? report,
-        office,
-        customerId
-      );
-
-      // Update report with Stripe invoice details
-      await admin
-        .from("monthly_reports")
-        .update({
-          stripe_invoice_id: invoiceId,
-          stripe_invoice_url: invoiceUrl,
-          stripe_invoice_pdf: invoicePdf,
-          status: "invoiced",
-        })
-        .eq("id", report.id);
-
-      return { success: true, report: freshReport ?? report, invoiceUrl };
-    }
-  } catch (stripeError) {
-    // Report is saved but Stripe failed — log but don't fail the whole action
-    console.error("Stripe invoice creation failed:", stripeError);
-    return {
-      success: true,
-      report,
-      warning: "Report submitted but invoice creation failed. Admin will be notified.",
-    };
-  }
-
   return { success: true, report };
 }
 
@@ -260,39 +195,6 @@ export async function adminSaveReport(officeId: string, input: ReportInput) {
     changes: reportData,
   });
 
-  // If report had an existing Stripe invoice, void it and create a new one
-  if (report.stripe_invoice_id) {
-    try {
-      await voidInvoice(report.stripe_invoice_id);
-
-      const { data: office } = await admin
-        .from("offices")
-        .select("*")
-        .eq("id", officeId)
-        .single();
-
-      if (office) {
-        const customerId = await getOrCreateCustomer(office);
-        const { invoiceId, invoiceUrl, invoicePdf } = await createAndSendInvoice(
-          report,
-          office,
-          customerId
-        );
-
-        await admin
-          .from("monthly_reports")
-          .update({
-            stripe_invoice_id: invoiceId,
-            stripe_invoice_url: invoiceUrl,
-            status: "invoiced",
-          })
-          .eq("id", report.id);
-      }
-    } catch (stripeError) {
-      console.error("Stripe invoice update failed:", stripeError);
-    }
-  }
-
   return { success: true, report };
 }
 
@@ -327,7 +229,6 @@ export async function adminUpdateReport(
   if ("error" in ctx) return { success: false, error: ctx.error };
   const { admin, user } = ctx;
 
-  // Fetch existing report for audit
   const { data: existing } = await admin
     .from("monthly_reports")
     .select("*")
@@ -362,51 +263,6 @@ export async function adminUpdateReport(
     },
   });
 
-  // If report has a Stripe invoice and revenue fields changed, void + recreate
-  const revenueFields = [
-    "tax_preparation_fees",
-    "bookkeeping_fees",
-    "insurance_commissions",
-    "notary_copy_fax_fees",
-    "translation_document_fees",
-    "other_service_fees",
-  ];
-  const revenueChanged = revenueFields.some(
-    (f) => f in updates && updates[f as keyof typeof updates] !== existing[f as keyof typeof existing]
-  );
-
-  if (existing.stripe_invoice_id && revenueChanged) {
-    try {
-      await voidInvoice(existing.stripe_invoice_id);
-
-      const { data: office } = await admin
-        .from("offices")
-        .select("*")
-        .eq("id", existing.office_id)
-        .single();
-
-      if (office && report) {
-        const customerId = await getOrCreateCustomer(office);
-        const { invoiceId, invoiceUrl, invoicePdf } = await createAndSendInvoice(
-          report,
-          office,
-          customerId
-        );
-
-        await admin
-          .from("monthly_reports")
-          .update({
-            stripe_invoice_id: invoiceId,
-            stripe_invoice_url: invoiceUrl,
-            status: "invoiced",
-          })
-          .eq("id", reportId);
-      }
-    } catch (stripeError) {
-      console.error("Stripe invoice update failed:", stripeError);
-    }
-  }
-
   return { success: true, report };
 }
 
@@ -415,7 +271,6 @@ export async function sendReminder(officeId: string) {
   if ("error" in ctx) return { success: false, error: ctx.error };
   const { admin, user } = ctx;
 
-  // Fetch office details for the email
   const { data: office } = await admin
     .from("offices")
     .select("id, name, email, office_number")
@@ -426,7 +281,6 @@ export async function sendReminder(officeId: string) {
     return { success: false, error: "Office not found or has no email" };
   }
 
-  // Send reminder via Edge Function
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (supabaseUrl && serviceRoleKey) {
@@ -477,88 +331,68 @@ export async function markReviewed(reportId: string) {
   return { success: true, is_processed: true };
 }
 
-export async function reissueInvoice(reportId: string) {
+export async function markAsInvoiced(reportId: string, qbInvoiceNumber?: string) {
   const ctx = await requireAdmin();
   if ("error" in ctx) return { success: false, error: ctx.error };
   const { admin, user } = ctx;
 
-  const { data: report } = await admin
+  const { data: existing } = await admin
     .from("monthly_reports")
-    .select("*")
+    .select("id, status, office_id, report_month")
     .eq("id", reportId)
     .single();
 
-  if (!report) return { success: false, error: "Report not found" };
-  if (report.status === "paid")
-    return { success: false, error: "Cannot re-issue a paid report" };
-  if (report.status === "draft")
-    return { success: false, error: "Cannot re-issue a draft report" };
-  if (Number(report.total_fees_due ?? 0) <= 0)
-    return { success: false, error: "Report has no fees to invoice" };
-
-  const { data: office } = await admin
-    .from("offices")
-    .select("*")
-    .eq("id", report.office_id)
-    .single();
-
-  if (!office) return { success: false, error: "Office not found" };
-
-  // Void the previous invoice if it exists and is still alive
-  if (report.stripe_invoice_id) {
-    try {
-      await voidInvoice(report.stripe_invoice_id);
-    } catch (err) {
-      console.error("Could not void previous invoice:", err);
-      // Continue anyway — the previous invoice may not exist in current Stripe mode
-    }
-  }
-
-  try {
-    const customerId = await getOrCreateCustomer(office);
-
-    if (!office.stripe_customer_id) {
-      await admin
-        .from("offices")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", office.id);
-    }
-
-    const { invoiceId, invoiceUrl, invoicePdf } = await createAndSendInvoice(
-      report,
-      office,
-      customerId
-    );
-
-    await admin
-      .from("monthly_reports")
-      .update({
-        stripe_invoice_id: invoiceId,
-        stripe_invoice_url: invoiceUrl,
-        stripe_invoice_pdf: invoicePdf,
-        status: "invoiced",
-      })
-      .eq("id", reportId);
-
-    await admin.from("audit_log").insert({
-      user_id: user.id,
-      action: "reissue_invoice",
-      entity_type: "monthly_report",
-      entity_id: reportId,
-      changes: {
-        previous_invoice_id: report.stripe_invoice_id,
-        new_invoice_id: invoiceId,
-      },
-    });
-
-    return { success: true, invoiceUrl };
-  } catch (err) {
-    console.error("Re-issue invoice failed:", err);
+  if (!existing) return { success: false, error: "Report not found" };
+  if (existing.status !== "submitted")
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Failed to create invoice",
+      error: `Cannot mark as invoiced — report is in ${existing.status} status`,
     };
+
+  const trimmed = qbInvoiceNumber?.trim();
+  const { error } = await admin
+    .from("monthly_reports")
+    .update({
+      status: "invoiced",
+      invoiced_at: new Date().toISOString(),
+      qb_invoice_number: trimmed && trimmed.length > 0 ? trimmed : null,
+    })
+    .eq("id", reportId);
+
+  if (error) return { success: false, error: error.message };
+
+  await admin.from("audit_log").insert({
+    user_id: user.id,
+    action: "mark_invoiced",
+    entity_type: "monthly_report",
+    entity_id: reportId,
+    changes: {
+      qb_invoice_number: trimmed && trimmed.length > 0 ? trimmed : null,
+    },
+  });
+
+  // Send courtesy email to franchisee (fire-and-forget)
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (supabaseUrl && serviceRoleKey) {
+      fetch(`${supabaseUrl}/functions/v1/on-report-invoiced`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceRoleKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          report_id: reportId,
+          qb_invoice_number: trimmed && trimmed.length > 0 ? trimmed : null,
+        }),
+      }).catch((err) => console.error("Invoiced email failed:", err));
+    }
+  } catch {
+    // Non-critical
   }
+
+  return { success: true };
 }
 
 export async function markAsPaid(reportId: string) {
@@ -568,35 +402,19 @@ export async function markAsPaid(reportId: string) {
 
   const { data: existing } = await admin
     .from("monthly_reports")
-    .select("id, status, stripe_invoice_id")
+    .select("id, status")
     .eq("id", reportId)
     .single();
 
   if (!existing) return { success: false, error: "Report not found" };
   if (existing.status === "paid") return { success: false, error: "Report is already paid" };
 
-  const updateData: Record<string, unknown> = {
-    status: "paid",
-    paid_at: new Date().toISOString(),
-  };
-
-  // Mark the Stripe invoice as paid out of band if one exists
-  if (existing.stripe_invoice_id) {
-    try {
-      const { invoicePdf, hostedInvoiceUrl } = await markInvoicePaidOutOfBand(
-        existing.stripe_invoice_id
-      );
-      if (invoicePdf) updateData.stripe_invoice_pdf = invoicePdf;
-      if (hostedInvoiceUrl) updateData.stripe_invoice_url = hostedInvoiceUrl;
-    } catch (err) {
-      // Invoice may already be paid via Stripe — continue updating the report
-      console.error("Stripe mark paid failed:", err);
-    }
-  }
-
   const { error } = await admin
     .from("monthly_reports")
-    .update(updateData)
+    .update({
+      status: "paid",
+      paid_at: new Date().toISOString(),
+    })
     .eq("id", reportId);
 
   if (error) return { success: false, error: error.message };

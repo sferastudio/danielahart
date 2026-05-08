@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CURRENCY_FORMATTER, REVENUE_FIELDS } from "@/lib/constants";
-import { adminUpdateReport, markAsPaid, reissueInvoice } from "@/actions/reports";
+import { adminUpdateReport, markAsPaid, markAsInvoiced } from "@/actions/reports";
 import { toast, Toaster } from "sonner";
 import type { MonthlyReport, ReportStatus } from "@/lib/types";
 
@@ -67,6 +67,8 @@ export function ReportEditor({
   const [isPending, startTransition] = useTransition();
   const [editingReport, setEditingReport] = useState<MonthlyReport | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [invoicingReport, setInvoicingReport] = useState<MonthlyReport | null>(null);
+  const [qbInvoiceNumber, setQbInvoiceNumber] = useState("");
 
   function openEdit(report: MonthlyReport) {
     setEditingReport(report);
@@ -166,25 +168,18 @@ export function ReportEditor({
                     >
                       Edit
                     </Button>
-                    {report.status !== "paid" && report.status !== "draft" && (
+                    {report.status === "submitted" && (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-blue-700 hover:text-blue-800 hover:bg-blue-50"
                         disabled={isPending}
                         onClick={() => {
-                          startTransition(async () => {
-                            const result = await reissueInvoice(report.id);
-                            if (result.success) {
-                              toast.success("Invoice re-issued");
-                              router.refresh();
-                            } else {
-                              toast.error(result.error ?? "Failed to re-issue invoice");
-                            }
-                          });
+                          setInvoicingReport(report);
+                          setQbInvoiceNumber("");
                         }}
                       >
-                        Re-issue Invoice
+                        Mark as Invoiced
                       </Button>
                     )}
                     {report.status !== "paid" && report.status !== "draft" && (
@@ -235,6 +230,64 @@ export function ReportEditor({
           </div>
         </div>
       )}
+
+      {/* Mark as Invoiced Dialog */}
+      <Dialog
+        open={!!invoicingReport}
+        onOpenChange={(open) => !open && setInvoicingReport(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark Report as Invoiced</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-slate-600">
+              Confirms you&apos;ve issued an invoice for this report in QuickBooks.
+              The franchisee will receive a courtesy email letting them know to expect
+              the QuickBooks invoice.
+            </p>
+            <div className="space-y-1">
+              <Label className="text-xs">QB Invoice # (optional)</Label>
+              <Input
+                value={qbInvoiceNumber}
+                onChange={(e) => setQbInvoiceNumber(e.target.value)}
+                placeholder="e.g. INV-1042"
+                autoFocus
+              />
+              <p className="text-xs text-slate-400">
+                For your reference only — leave blank if you don&apos;t track QB invoice numbers here.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInvoicingReport(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={isPending}
+              className="bg-brand-red hover:bg-brand-red-hover text-white"
+              onClick={() => {
+                if (!invoicingReport) return;
+                const reportId = invoicingReport.id;
+                const ref = qbInvoiceNumber;
+                startTransition(async () => {
+                  const result = await markAsInvoiced(reportId, ref);
+                  if (result.success) {
+                    toast.success("Report marked as invoiced");
+                    setInvoicingReport(null);
+                    setQbInvoiceNumber("");
+                    router.refresh();
+                  } else {
+                    toast.error(result.error ?? "Failed to mark as invoiced");
+                  }
+                });
+              }}
+            >
+              {isPending ? "Saving..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog

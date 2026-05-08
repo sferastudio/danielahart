@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback, useTransition, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Calendar, ChevronRight, ExternalLink } from "lucide-react";
+import { Calendar, ChevronRight } from "lucide-react";
 import { CURRENCY_FORMATTER, PERCENTAGE_FORMATTER, REVENUE_FIELDS } from "@/lib/constants";
 import type { RevenueFieldName } from "@/lib/constants";
 import { useReportCalculations } from "@/hooks/useReportCalculations";
@@ -23,7 +22,6 @@ interface MonthlyRevenueFormProps {
     other_service_fees: number;
   };
   reportStatus?: string;
-  stripeInvoiceUrl?: string | null;
 }
 
 export function MonthlyRevenueForm({
@@ -33,7 +31,6 @@ export function MonthlyRevenueForm({
   advertisingPercentage,
   initialValues,
   reportStatus,
-  stripeInvoiceUrl,
 }: MonthlyRevenueFormProps) {
   const [values, setValues] = useState({
     tax_preparation_fees: initialValues?.tax_preparation_fees ?? 0,
@@ -46,26 +43,10 @@ export function MonthlyRevenueForm({
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(reportStatus);
-  const [currentInvoiceUrl, setCurrentInvoiceUrl] = useState(stripeInvoiceUrl);
-  const router = useRouter();
 
-  // Refresh server data when user returns to the tab (e.g. after paying on Stripe)
-  useEffect(() => {
-    if (currentStatus !== "invoiced") return;
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        router.refresh();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [currentStatus, router]);
-
-  // Sync props back to local state when server data refreshes
   useEffect(() => {
     setCurrentStatus(reportStatus);
-    setCurrentInvoiceUrl(stripeInvoiceUrl);
-  }, [reportStatus, stripeInvoiceUrl]);
+  }, [reportStatus]);
 
   const calculations = useReportCalculations({
     ...values,
@@ -108,14 +89,8 @@ export function MonthlyRevenueForm({
       });
       setIsSubmitting(false);
       if (result.success) {
-        if (result.invoiceUrl) {
-          setCurrentStatus("invoiced");
-          setCurrentInvoiceUrl(result.invoiceUrl);
-          toast.success("Report submitted. Invoice ready for payment.");
-        } else {
-          setCurrentStatus("submitted");
-          toast.success("Report submitted successfully.");
-        }
+        setCurrentStatus("submitted");
+        toast.success("Report submitted. Daniel Ahart Tax will issue your invoice through QuickBooks shortly.");
       } else {
         toast.error(result.error ?? "Failed to submit report");
       }
@@ -213,15 +188,21 @@ export function MonthlyRevenueForm({
 
         {/* CTA */}
         <div className="flex items-center gap-6">
-          {currentStatus === "invoiced" && currentInvoiceUrl ? (
-            <a
-              href={currentInvoiceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 py-4 bg-brand-red hover:bg-brand-red-hover text-white font-black uppercase tracking-widest rounded-[4px] transition-all flex items-center justify-center gap-3"
-            >
-              Pay Invoice <ExternalLink size={18} />
-            </a>
+          {currentStatus === "submitted" ? (
+            <div className="flex-1 py-4 bg-blue-600 text-white font-black uppercase tracking-widest rounded-[4px] flex items-center justify-center gap-3">
+              Submitted &mdash; Awaiting Invoice from Daniel Ahart
+            </div>
+          ) : currentStatus === "invoiced" ? (
+            <div className="flex-1 py-4 bg-amber-500 text-white font-black uppercase tracking-widest rounded-[4px] flex flex-col items-center justify-center gap-1 text-center px-4">
+              <span>Invoiced via QuickBooks</span>
+              <span className="text-[10px] font-medium normal-case tracking-normal opacity-90">
+                Check your email for the QuickBooks payment link.
+              </span>
+            </div>
+          ) : currentStatus === "overdue" ? (
+            <div className="flex-1 py-4 bg-red-600 text-white font-black uppercase tracking-widest rounded-[4px] flex items-center justify-center gap-3">
+              Overdue
+            </div>
           ) : currentStatus === "paid" ? (
             <div className="flex-1 py-4 bg-green-600 text-white font-black uppercase tracking-widest rounded-[4px] flex items-center justify-center gap-3">
               Paid

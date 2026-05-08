@@ -16,10 +16,12 @@ export default function AlertsSidebar({ offices }: AlertsSidebarProps) {
       (!o.currentReport || o.currentReport.status === "overdue")
   );
 
+  const blueAlerts = offices.filter(
+    (o) => o.currentReport?.status === "submitted"
+  );
+
   const yellowAlerts = offices.filter(
-    (o) =>
-      o.currentReport?.status === "submitted" ||
-      o.currentReport?.status === "invoiced"
+    (o) => o.currentReport?.status === "invoiced"
   );
 
   const orangeAlerts =
@@ -33,7 +35,10 @@ export default function AlertsSidebar({ offices }: AlertsSidebarProps) {
       : [];
 
   const hasAlerts =
-    redAlerts.length > 0 || yellowAlerts.length > 0 || orangeAlerts.length > 0;
+    redAlerts.length > 0 ||
+    blueAlerts.length > 0 ||
+    yellowAlerts.length > 0 ||
+    orangeAlerts.length > 0;
 
   if (!hasAlerts) {
     return (
@@ -69,6 +74,14 @@ export default function AlertsSidebar({ offices }: AlertsSidebarProps) {
           offices={orangeAlerts}
         />
       )}
+      {blueAlerts.length > 0 && (
+        <AlertCard
+          color="blue"
+          label="Needs Invoicing in QuickBooks"
+          count={blueAlerts.length}
+          offices={blueAlerts}
+        />
+      )}
       {yellowAlerts.length > 0 && (
         <AlertCard
           color="yellow"
@@ -87,7 +100,7 @@ function AlertCard({
   count,
   offices,
 }: {
-  color: "red" | "yellow" | "orange";
+  color: "red" | "yellow" | "orange" | "blue";
   label: string;
   count: number;
   offices: OfficeWithReport[];
@@ -110,6 +123,12 @@ function AlertCard({
       border: "border-orange-200",
       badge: "bg-orange-100 text-orange-800",
       text: "text-orange-700",
+    },
+    blue: {
+      bg: "bg-blue-50",
+      border: "border-blue-200",
+      badge: "bg-blue-100 text-blue-800",
+      text: "text-blue-700",
     },
   };
 

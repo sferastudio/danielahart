@@ -167,16 +167,16 @@ export default async function PastReportsPage() {
                           report.status.slice(1)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="space-x-2">
-                      {report.status === "invoiced" && report.stripe_invoice_url && (
-                        <a
-                          href={report.stripe_invoice_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-bold text-brand-red hover:underline"
-                        >
-                          Pay Invoice <ExternalLink className="size-3" />
-                        </a>
+                    <TableCell className="space-y-1 text-right">
+                      {report.status === "invoiced" && (
+                        <span className="block text-[10px] text-slate-500">
+                          Check email for QuickBooks invoice
+                        </span>
+                      )}
+                      {report.qb_invoice_number && (
+                        <span className="block text-[10px] text-slate-500">
+                          QB Ref: <span className="font-mono">{report.qb_invoice_number}</span>
+                        </span>
                       )}
                       {report.status === "paid" && report.stripe_invoice_url && (
                         <a

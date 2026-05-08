@@ -13,8 +13,8 @@ const STATUS_CONFIG: Record<
   { dotColor: string; label: string; textClass: string }
 > = {
   paid: { dotColor: "bg-emerald-500", label: "Verified & Paid", textClass: "text-slate-400 font-medium" },
-  submitted: { dotColor: "bg-blue-500", label: "Submitted", textClass: "text-slate-400 font-medium" },
-  invoiced: { dotColor: "bg-amber-400", label: "Invoiced - Awaiting Payment", textClass: "text-slate-400 font-medium" },
+  submitted: { dotColor: "bg-blue-500", label: "Submitted - Awaiting Invoice", textClass: "text-slate-400 font-medium" },
+  invoiced: { dotColor: "bg-amber-400", label: "Invoiced via QuickBooks", textClass: "text-slate-400 font-medium" },
   draft: { dotColor: "bg-amber-400", label: "Drafting - Needs Submission", textClass: "text-amber-600 font-bold italic tracking-tighter" },
   overdue: { dotColor: "bg-red-500", label: "Overdue", textClass: "text-red-500 font-bold" },
   none: { dotColor: "bg-slate-300", label: "Not Available", textClass: "text-slate-400 font-medium" },

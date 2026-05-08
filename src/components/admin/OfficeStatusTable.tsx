@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -14,6 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -36,9 +44,9 @@ import {
   Bell,
   CheckCircle,
   DollarSign,
-  RefreshCw,
+  FileText,
 } from "lucide-react";
-import { sendReminder, markReviewed, markAsPaid, reissueInvoice } from "@/actions/reports";
+import { sendReminder, markReviewed, markAsPaid, markAsInvoiced } from "@/actions/reports";
 import { toast } from "sonner";
 
 const REPORT_STATUS_CLASSES: Record<string, string> = {
@@ -114,6 +122,9 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [invoicingReportId, setInvoicingReportId] = useState<string | null>(null);
+  const [qbInvoiceNumber, setQbInvoiceNumber] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => setMounted(true), []);
 
@@ -195,14 +206,21 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
     }
   };
 
-  const handleReissueInvoice = async (reportId: string) => {
-    const result = await reissueInvoice(reportId);
-    if (result.success) {
-      toast.success("Invoice re-issued");
-      router.refresh();
-    } else {
-      toast.error(result.error ?? "Failed to re-issue invoice");
-    }
+  const handleConfirmInvoiced = () => {
+    if (!invoicingReportId) return;
+    const reportId = invoicingReportId;
+    const ref = qbInvoiceNumber;
+    startTransition(async () => {
+      const result = await markAsInvoiced(reportId, ref);
+      if (result.success) {
+        toast.success("Report marked as invoiced");
+        setInvoicingReportId(null);
+        setQbInvoiceNumber("");
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Failed to mark as invoiced");
+      }
+    });
   };
 
   const SortableHead = ({
@@ -378,17 +396,18 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
                             Mark Reviewed
                           </DropdownMenuItem>
                         )}
-                        {office.currentReport && office.currentReport.status !== "paid" && office.currentReport.status !== "draft" && (
+                        {office.currentReport && office.currentReport.status === "submitted" && (
                           <DropdownMenuItem
-                            onClick={() =>
-                              handleReissueInvoice(office.currentReport!.id)
-                            }
+                            onClick={() => {
+                              setInvoicingReportId(office.currentReport!.id);
+                              setQbInvoiceNumber("");
+                            }}
                           >
-                            <RefreshCw className="size-4 mr-2" />
-                            Re-issue Invoice
+                            <FileText className="size-4 mr-2" />
+                            Mark as Invoiced
                           </DropdownMenuItem>
                         )}
-                        {office.currentReport && office.currentReport.status !== "paid" && office.currentReport.status !== "draft" && (
+                        {office.currentReport && (office.currentReport.status === "invoiced" || office.currentReport.status === "overdue") && (
                           <DropdownMenuItem
                             onClick={() =>
                               handleMarkAsPaid(office.currentReport!.id)
@@ -454,6 +473,59 @@ export function OfficeStatusTable({ offices, periodLabel }: { offices: OfficeWit
           </Button>
         </div>
       </div>
+
+      <Dialog
+        open={!!invoicingReportId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setInvoicingReportId(null);
+            setQbInvoiceNumber("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark Report as Invoiced</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-slate-600">
+              Confirms you&apos;ve issued an invoice for this report in QuickBooks.
+              The franchisee will receive a courtesy email letting them know to expect
+              the QuickBooks invoice.
+            </p>
+            <div className="space-y-1">
+              <Label className="text-xs">QB Invoice # (optional)</Label>
+              <Input
+                value={qbInvoiceNumber}
+                onChange={(e) => setQbInvoiceNumber(e.target.value)}
+                placeholder="e.g. INV-1042"
+                autoFocus
+              />
+              <p className="text-xs text-slate-400">
+                For your reference only — leave blank if you don&apos;t track QB invoice numbers here.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setInvoicingReportId(null);
+                setQbInvoiceNumber("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={isPending}
+              className="bg-brand-red hover:bg-brand-red-hover text-white"
+              onClick={handleConfirmInvoiced}
+            >
+              {isPending ? "Saving..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
