@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { REVENUE_FIELDS, CURRENCY_FORMATTER, PERCENTAGE_FORMATTER } from "@/lib/constants";
+import { REVENUE_FIELDS, CURRENCY_FORMATTER, PERCENTAGE_FORMATTER, getCurrentReportMonth } from "@/lib/constants";
 import { adminSaveReport } from "@/actions/reports";
 import { createClient } from "@/lib/supabase/client";
 import { toast, Toaster } from "sonner";
@@ -29,10 +29,8 @@ export function AdminMonthlySalesForm({
   const [isPending, startTransition] = useTransition();
 
   const initialOffice = searchParams.get("office") || "";
-  const now = new Date();
-  const initialMonth =
-    searchParams.get("month") ||
-    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  // Default to the active reporting period (prior calendar month) — e.g. in May, file April.
+  const initialMonth = searchParams.get("month") || getCurrentReportMonth().slice(0, 7);
 
   const [selectedOffice, setSelectedOffice] = useState(initialOffice);
   const [currentMonth, setCurrentMonth] = useState(initialMonth);
